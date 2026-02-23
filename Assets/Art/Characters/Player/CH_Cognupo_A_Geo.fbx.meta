@@ -7,6 +7,11 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: CH_Cognupo_Body_A_Mat
+    second: {fileID: 2100000, guid: 4dd12ce551b4cff4d8c99dfd94834a72, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: Cognupo_Mat.002
     second: {fileID: 2100000, guid: 4dd12ce551b4cff4d8c99dfd94834a72, type: 2}
   materials:
@@ -102,7 +107,7 @@ ModelImporter:
   autoGenerateAvatarMappingIfUnspecified: 1
   animationType: 2
   humanoidOversampling: 1
-  avatarSetup: 0
+  avatarSetup: 1
   addHumanoidExtraRootOnlyWhenUsingAvatar: 1
   importBlendShapeDeformPercent: 1
   remapMaterialsIfMaterialImportModeIsNone: 0
