@@ -10,16 +10,16 @@ public class PlayerMovement : MonoBehaviour
     // MOVIMIENTO
     // =========================
     [Header("Movement")]
-    [SerializeField] private float runSpeed = 8f;          // Velocidad objetivo al correr (clamp en SpeedControl)
+    [SerializeField] private float runSpeed = 8f;          // Velocidad objetivo al correr
     [SerializeField] private float groundDrag = 5f;        // "Freno" en suelo para que no patine
-    [SerializeField] private float airMultiplier = 0.5f;   // Control en el aire (menos fuerza, mas floaty)
+    [SerializeField] private float airMultiplier = 0.5f;   // Control en el aire
 
     // =========================
     // VISUALES
     // =========================
     [Header("Visuals")]
-    [SerializeField] private Transform playerMesh;         // El mesh que giramos (NO el rigidbody/transform raiz)
-    [SerializeField] private float rotationSpeed = 10f;    // Suavidad de giro (Slerp)
+    [SerializeField] private Transform playerMesh;         // El mesh que giramo
+    [SerializeField] private float rotationSpeed = 10f;    // Suavidad de giro
 
     // =========================
     // SWING
@@ -29,15 +29,20 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float tangentialAccel = 14f;          // Aceleracion tangencial (empuje lateral para balancear)
     [SerializeField] private float radialCorrection = 35f;         // Correccion tipo muelle si "nos pasamos" del radio
     [SerializeField] private float gravityScaleWhileSwing = 1.25f; // Gravedad extra para que el swing se sienta mas pesado
-    [SerializeField] private bool pendingSwingBoost = false;       // Flag: al empezar a colgar, aplicar 1 impulso inicial
-
+    [SerializeField] private bool pendingSwingBoost = false;       // Al empezar a colgar, aplicar 1 impulso inicial
+    private float lastSwingTime;
     // =========================
     // JUMP
     // =========================
     [Header("Jumping")]
     [SerializeField] private float jumpForce = 7f;         // Fuerza de salto
     [SerializeField] private float jumpCooldown = 0.2f;    // Para que no spamee el jugador
+    [SerializeField] private float fallMultiplier = 2.5f;       // Gravedad extra al caer
+    [SerializeField] private float lowJumpMultiplier = 2f;      // Gravedad extra si sueltas el boton de salto antes de tiempo
+    [SerializeField] private float hangTimeThreshold = 1f;      // Velocidad Y donde empieza a considerarse el punto mas alto
+    [SerializeField] private float hangTimeGravityMult = 0.5f;  // Cuanto reducimos la gravedad en el punto mas alto
     private bool readyToJump = true;                       
+    private bool isJumpHeld = false; // Para saber si el jugador mantiene pulsado el boton
 
     // =========================
     // GROUND CHECK
@@ -59,6 +64,7 @@ public class PlayerMovement : MonoBehaviour
     // INPUT / STATE
     // =========================
     private bool wasSwingingLastFrame = false; 
+    
 
     private float horizontalInput;             
     private float verticalInput;               
@@ -86,10 +92,11 @@ public class PlayerMovement : MonoBehaviour
         // Creamos el input wrapper una sola vez
         if (inputs == null) inputs = new PlayerInputs();
 
-        // Suscribimos callbacks (movement / jump) y activamos action map
+        // Suscribimos callbacks y activamos action map
         inputs.PlayerActionMap.Movement.performed += OnMovement;
         inputs.PlayerActionMap.Movement.canceled  += OnMovement;
         inputs.PlayerActionMap.Jump.performed += OnJump;
+        inputs.PlayerActionMap.Jump.canceled += OnJump;
         inputs.PlayerActionMap.Enable();
     }
 
@@ -101,6 +108,7 @@ public class PlayerMovement : MonoBehaviour
         inputs.PlayerActionMap.Movement.performed -= OnMovement;
         inputs.PlayerActionMap.Movement.canceled  -= OnMovement;
         inputs.PlayerActionMap.Jump.performed     -= OnJump;
+        inputs.PlayerActionMap.Jump.canceled      -= OnJump;
         inputs.PlayerActionMap.Disable();
     }
 
@@ -138,6 +146,11 @@ public class PlayerMovement : MonoBehaviour
         // Detectar si acabo de entrar en swing
         bool isSwingingNow = IsSwinging();
 
+        if (isSwingingNow) 
+        {
+            lastSwingTime = Time.time; // Guardo en que momento estoy balanceandome
+        }
+
         if (isSwingingNow && !wasSwingingLastFrame)
         {
             // Marcamos que necesitamos el impulso inicial al empezar a colgar, esto lo hago porque a veces se me quedaba como tieso el pj y era dificil ganar velocidad
@@ -171,6 +184,7 @@ public class PlayerMovement : MonoBehaviour
 
         // Movimiento normal por fuerzas
         MovePlayerNormal();
+        HandleJumpPhysics();
     }
 
     // =========================
@@ -203,7 +217,7 @@ public class PlayerMovement : MonoBehaviour
     }
 
     // =========================
-    // SWING: BOOST INICIAL
+    // BOOST INICIAL
     // =========================
     private void ApplyInitialSwingBoost()
     {
@@ -322,7 +336,7 @@ public class PlayerMovement : MonoBehaviour
     }
 
     // =========================
-    // FISICA DE PeNDULO
+    // FISICA DE PENDULO
     // =========================
     private void HandleSwingPendulum()
     {
@@ -421,6 +435,28 @@ public class PlayerMovement : MonoBehaviour
         Vector3 jumpDir = camTransform.forward + Vector3.up * 0.5f;
         rb.AddForce(jumpDir.normalized * jumpForce * 1.5f, ForceMode.Impulse);
     }
+    private void HandleJumpPhysics()
+    {
+        // Solo aplicamos esto en el aire y si no estamos balanceandonos
+        if (grounded || IsSwinging()) return;
+
+        // Caida 
+        if (rb.linearVelocity.y < 0)
+        {
+            rb.linearVelocity += Vector3.up * Physics.gravity.y * (fallMultiplier - 1) * Time.fixedDeltaTime;
+        }
+        // Corte de salto
+        else if (rb.linearVelocity.y > 0 && !isJumpHeld && (Time.time - lastSwingTime > 0.3f))
+        {
+            rb.linearVelocity += Vector3.up * Physics.gravity.y * (lowJumpMultiplier - 1) * Time.fixedDeltaTime;
+        }
+        // Tiempo de suspension
+        else if (Mathf.Abs(rb.linearVelocity.y) < hangTimeThreshold && isJumpHeld)
+        {
+            // Contrarrestamos la gravedad estandar de Unity anadiendo una fuerza hacia arriba
+            rb.AddForce(Vector3.up * (Mathf.Abs(Physics.gravity.y) * (1 - hangTimeGravityMult)), ForceMode.Acceleration);
+        }
+    }
 
     private void ResetJump() => readyToJump = true; 
 
@@ -443,8 +479,14 @@ public class PlayerMovement : MonoBehaviour
 
     public void OnJump(InputAction.CallbackContext context)
     {
-        // Latcheamos jump en performed para consumirlo en Update 1 frame
         if (context.performed)
+        {
             jumpPressedThisFrame = true;
+            isJumpHeld = true;
+        }
+        else if (context.canceled)
+        {
+            isJumpHeld = false;
+        }
     }
 }
