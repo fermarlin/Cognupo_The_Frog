@@ -1485,14 +1485,18 @@ MonoBehaviour:
   groundDrag: 5
   airMultiplier: 0.5
   playerMesh: {fileID: 2980691643696764883}
-  rotationSpeed: 10
+  rotationSpeed: 20
   rope: {fileID: 3063479123836760656}
-  tangentialAccel: 10
+  tangentialAccel: 20
   radialCorrection: 45
   gravityScaleWhileSwing: 9.81
   pendingSwingBoost: 0
-  jumpForce: 7
+  jumpForce: 10
   jumpCooldown: 0.2
+  fallMultiplier: 2
+  lowJumpMultiplier: 7
+  hangTimeThreshold: 0.2
+  hangTimeGravityMult: 0.5
   whatIsGround:
     serializedVersion: 2
     m_Bits: 8
