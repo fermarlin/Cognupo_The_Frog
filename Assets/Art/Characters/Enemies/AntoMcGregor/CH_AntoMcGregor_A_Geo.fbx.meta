@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: b8817ee9aa002a84bba8589ed7ff60bf
+guid: f9ffea3a7d222c9489bd15ccaec328e4
 ModelImporter:
   serializedVersion: 22200
   internalIDToNameTable: []
@@ -7,23 +7,8 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
-      name: CH_MoscarGoon_Beret_A_Mat
-    second: {fileID: 2100000, guid: ccf17792e4395b54eaee04e5ff2e70af, type: 2}
-  - first:
-      type: UnityEngine:Material
-      assembly: UnityEngine.CoreModule
-      name: CH_MoscarGoon_Body_A_Mat
-    second: {fileID: 2100000, guid: f9ad261b1c15bc84ba36e5179f1e932a, type: 2}
-  - first:
-      type: UnityEngine:Material
-      assembly: UnityEngine.CoreModule
-      name: CH_MoscarGoon_Moustache_A_Mat
-    second: {fileID: 2100000, guid: 054a7bab709d6b244b8cb4915e607014, type: 2}
-  - first:
-      type: UnityEngine:Material
-      assembly: UnityEngine.CoreModule
-      name: CH_MoscarGoon_Wing_A_Mat
-    second: {fileID: 2100000, guid: 9eed2500b11072541a3bee7c2f44357f, type: 2}
+      name: CH_AntoMCGregor_Body_A_Mat
+    second: {fileID: 2100000, guid: f7df158d9a0571440b38ead612e84a4a, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0
@@ -53,7 +38,7 @@ ModelImporter:
     isReadable: 0
   meshes:
     lODScreenPercentages: []
-    globalScale: 0.5
+    globalScale: 1
     meshCompression: 0
     addColliders: 0
     useSRGBMaterialColor: 1
@@ -108,7 +93,7 @@ ModelImporter:
     armStretch: 0.05
     legStretch: 0.05
     feetSpacing: 0
-    globalScale: 0.5
+    globalScale: 1
     rootMotionBoneName: 
     hasTranslationDoF: 0
     hasExtraRoot: 0
