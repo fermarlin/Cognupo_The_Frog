@@ -13,13 +13,19 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float runSpeed = 8f;          // Velocidad objetivo al correr
     [SerializeField] private float groundDrag = 5f;        // "Freno" en suelo para que no patine
     [SerializeField] private float airMultiplier = 0.5f;   // Control en el aire
-
+    [Header("Slope")]
+    [SerializeField] private float maxWalkableSlopeAngle = 70f; // Hasta este angulo no resbala
+    [SerializeField] private float slopeStickForce = 5f;        // Fuerza para pegarlo al suelo sin que patine
     // =========================
     // VISUALES
     // =========================
     [Header("Visuals")]
     [SerializeField] private Transform playerMesh;         // El mesh que giramo
     [SerializeField] private float rotationSpeed = 10f;    // Suavidad de giro
+    
+    [Header("Ground Visual Rotation")]
+    [SerializeField] private float groundAlignRayLength = 1.5f;    // Distancia del raycast hacia abajo para leer la normal
+    [SerializeField] private float maxGroundTilt = 45f;            // Limite maximo de inclinacion para evitar cosas raras
 
     // =========================
     // SWING
@@ -41,7 +47,10 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float lowJumpMultiplier = 2f;      // Gravedad extra si sueltas el boton de salto antes de tiempo
     [SerializeField] private float hangTimeThreshold = 1f;      // Velocidad Y donde empieza a considerarse el punto mas alto
     [SerializeField] private float hangTimeGravityMult = 0.5f;  // Cuanto reducimos la gravedad en el punto mas alto
-    private bool readyToJump = true;                       
+    [SerializeField] private float jumpInitialLightTime = 0.12f; // tiempo con subida mas ligera
+
+    private float lastJumpTime;
+    private bool readyToJump = true;
     private bool isJumpHeld = false; // Para saber si el jugador mantiene pulsado el boton
 
     // =========================
@@ -52,7 +61,7 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private Transform groundCheck;        // Punto desde el que hacemos CheckSphere
     [SerializeField] private float groundCheckRadius = 0.22f; // Radio del check
     private bool grounded;                                 // Si esta en el suelo o no
-
+    public bool IsGrounded => grounded;
     // =========================
     // REFERENCES
     // =========================
@@ -85,7 +94,7 @@ public class PlayerMovement : MonoBehaviour
 
     // Este evento lo podemos usar para animaciones o lo que nos haga falta mas adelante
     public event Action<MovementState, MovementState> OnMovementStateChanged;
-
+    public event Action OnJumpTriggered;
 
     private void OnEnable()
     {
@@ -117,7 +126,8 @@ public class PlayerMovement : MonoBehaviour
     {
         rb = GetComponent<Rigidbody>();
         rb.freezeRotation = true;
-
+        Cursor.visible = false;
+        Cursor.lockState = CursorLockMode.Confined;
         // Cacheo algunos elementos
         if (Camera.main != null) camTransform = Camera.main.transform;
         if (playerMesh == null) playerMesh = transform;
@@ -276,40 +286,203 @@ public class PlayerMovement : MonoBehaviour
 
         Vector3 targetDirection = Vector3.zero;
 
-        // Velocidad horizontal
-        Vector3 vel = rb.linearVelocity;
-        Vector3 flatVel = new Vector3(vel.x, 0f, vel.z);
-
-        if (flatVel.sqrMagnitude > 0.04f)
+        // Rotacion especial mientras hace swing
+        if (IsSwinging() && rope != null && rope.fixedPoint != null)
         {
-            targetDirection = flatVel.normalized;
+            Vector3 targetPoint = rope.fixedPoint.position;
+            Vector3 toTarget = targetPoint - playerMesh.position;
+
+            // Direccion horizontal para decidir hacia donde mira en Y
+            Vector3 flatDir = new Vector3(toTarget.x, 0f, toTarget.z);
+
+            if (flatDir.sqrMagnitude > 0.0001f)
+            {
+                // Rotacion base: mirar hacia el punto en horizontal
+                Quaternion yawRot = Quaternion.LookRotation(flatDir.normalized, Vector3.up);
+
+                // Distancia horizontal al punto
+                float horizontalDistance = flatDir.magnitude;
+
+                // Diferencia vertical respecto al punto
+                float verticalDistance = Mathf.Abs(toTarget.y);
+
+                // Cuanto "levantamos" al personaje:
+                // - Si horizontalDistance tiende a 0 => angulo tiende a 0
+                // - Si verticalDistance tiende a 0 => angulo tiende a 90
+                float pitchRatio = 0f;
+                float total = horizontalDistance + verticalDistance;
+
+                if (total > 0.0001f)
+                    pitchRatio = horizontalDistance / total;
+
+                float pitchAngle = Mathf.Lerp(0f, 90f, pitchRatio);
+
+                // Inclinacion sobre su eje local X
+                Quaternion pitchRot = Quaternion.Euler(pitchAngle, 0f, 0f);
+
+                // Rotacion final
+                Quaternion targetRot = yawRot * pitchRot;
+
+                playerMesh.rotation = Quaternion.Slerp(
+                    playerMesh.rotation,
+                    targetRot,
+                    rotationSpeed * Time.deltaTime
+                );
+            }
         }
         else
         {
-            // Si casi estas parado, usamos el input relativo a camara para orientar el inicio
-            Vector3 camForward = camTransform.forward;
-            Vector3 camRight = camTransform.right;
-            camForward.y = 0f;
-            camRight.y = 0f;
-            camForward.Normalize();
-            camRight.Normalize();
+            // Velocidad horizontal
+            Vector3 vel = rb.linearVelocity;
+            Vector3 flatVel = new Vector3(vel.x, 0f, vel.z);
 
-            Vector3 inputDir = camForward * verticalInput + camRight * horizontalInput;
-            if (inputDir.sqrMagnitude > 0.001f)
-                targetDirection = inputDir.normalized;
-        }
+            if (flatVel.sqrMagnitude > 0.04f)
+            {
+                targetDirection = flatVel.normalized;
+            }
+            else
+            {
+                // Si casi estas parado, usamos el input relativo a camara para orientar el inicio
+                Vector3 camForward = camTransform.forward;
+                Vector3 camRight = camTransform.right;
+                camForward.y = 0f;
+                camRight.y = 0f;
+                camForward.Normalize();
+                camRight.Normalize();
 
-        // Rotacion lerpeada para que no sea instantaneo
-        if (targetDirection.sqrMagnitude > 0.001f)
-        {
-            Quaternion targetRot = Quaternion.LookRotation(targetDirection, Vector3.up);
-            playerMesh.rotation = Quaternion.Slerp(
-                playerMesh.rotation,
-                targetRot,
-                rotationSpeed * Time.deltaTime
-            );
+                Vector3 inputDir = camForward * verticalInput + camRight * horizontalInput;
+                if (inputDir.sqrMagnitude > 0.001f)
+                    targetDirection = inputDir.normalized;
+            }
+
+            // Rotacion lerpeada para que no sea instantaneo
+            if (targetDirection.sqrMagnitude > 0.001f)
+            {
+                Quaternion yawRot = Quaternion.LookRotation(targetDirection.normalized, Vector3.up);
+
+                //Proyectamos su forward sobre la superficie
+                if (TryGetGroundNormal(out Vector3 groundNormal))
+                {
+                    Vector3 projectedForward = Vector3.ProjectOnPlane(yawRot * Vector3.forward, groundNormal).normalized;
+
+                    // Si por alguna razon la proyeccion sale mal, usamos la normal del suelo
+                    if (projectedForward.sqrMagnitude > 0.001f)
+                    {
+                        Quaternion groundRot = Quaternion.LookRotation(projectedForward, groundNormal);
+
+                        // Limito la inclinacion maxima para que no haga cosas exageradas
+                        groundRot = ClampRotationTilt(groundRot, groundNormal, maxGroundTilt);
+
+                        playerMesh.rotation = Quaternion.Slerp(
+                            playerMesh.rotation,
+                            groundRot,
+                            rotationSpeed * Time.deltaTime
+                        );
+                        return;
+                    }
+                }
+
+                playerMesh.rotation = Quaternion.Slerp(
+                    playerMesh.rotation,
+                    yawRot,
+                    rotationSpeed * Time.deltaTime
+                );
+            }
         }
     }
+    // =========================
+    // LEER NORMAL DEL SUELO
+    // =========================
+    private bool TryGetGroundNormal(out Vector3 groundNormal)
+    {
+        groundNormal = Vector3.up;
+
+        Vector3 rayOrigin = playerMesh.position + Vector3.up * 0.25f;
+
+        if (Physics.Raycast(
+            rayOrigin,
+            Vector3.down,
+            out RaycastHit hit,
+            groundAlignRayLength,
+            whatIsGround,
+            QueryTriggerInteraction.Ignore))
+        {
+            groundNormal = hit.normal;
+            return true;
+        }
+
+        return false;
+    }
+
+    // =========================
+    // LIMITAR INCLINACION MAXIMA
+    // =========================
+    private Quaternion ClampRotationTilt(Quaternion targetRot, Vector3 groundNormal, float maxTilt)
+    {
+        Vector3 forward = targetRot * Vector3.forward;
+
+        // Rehacemos el forward sobre un plano para evitar deformaciones raras
+        Vector3 projectedForward = Vector3.ProjectOnPlane(forward, Vector3.up).normalized;
+        if (projectedForward.sqrMagnitude < 0.001f)
+            projectedForward = playerMesh.forward;
+
+        Quaternion flatRot = Quaternion.LookRotation(projectedForward, Vector3.up);
+        float tiltAngle = Vector3.Angle(Vector3.up, groundNormal);
+
+        if (tiltAngle <= maxTilt)
+            return targetRot;
+
+        float t = maxTilt / tiltAngle;
+        Vector3 limitedNormal = Vector3.Slerp(Vector3.up, groundNormal, t).normalized;
+
+        Vector3 limitedForward = Vector3.ProjectOnPlane(flatRot * Vector3.forward, limitedNormal).normalized;
+        if (limitedForward.sqrMagnitude < 0.001f)
+            limitedForward = Vector3.ProjectOnPlane(playerMesh.forward, limitedNormal).normalized;
+
+        return Quaternion.LookRotation(limitedForward, limitedNormal);
+    }
+
+        // =========================
+        // LIMITAR EL RESBALAR
+        // =========================
+
+    private void HandleSlopeAntiSlide()
+    {
+        if (!grounded) return;
+        if (!TryGetGroundNormal(out Vector3 groundNormal)) return;
+
+        float slopeAngle = Vector3.Angle(groundNormal, Vector3.up);
+
+        // Si la pendiente es suave, quitamos la componente de velocidad que empuja cuesta abajo
+        if (slopeAngle <= maxWalkableSlopeAngle)
+        {
+            Vector3 velocity = rb.linearVelocity;
+
+            // Separamos velocidad vertical de horizontal
+            Vector3 horizontalVelocity = new Vector3(velocity.x, 0f, velocity.z);
+
+            // Direccion cuesta abajo sobre el plano
+            Vector3 downhillDir = Vector3.ProjectOnPlane(Vector3.down, groundNormal).normalized;
+
+            if (downhillDir.sqrMagnitude > 0.001f)
+            {
+                // Cuanta velocidad llevamos hacia abajo de la pendiente
+                float downhillSpeed = Vector3.Dot(horizontalVelocity, downhillDir);
+
+                // Si se esta moviendo cuesta abajo por el deslizamiento, se la quitamos
+                if (downhillSpeed > 0f)
+                {
+                    horizontalVelocity -= downhillDir * downhillSpeed;
+                }
+            }
+
+            rb.linearVelocity = new Vector3(horizontalVelocity.x, velocity.y, horizontalVelocity.z);
+
+            // Un pequeno empuje hacia el suelo para que no flote o tiemble
+            rb.AddForce(-groundNormal * slopeStickForce, ForceMode.Acceleration);
+        }
+    }
+
 
     // =========================
     // MOVIMIENTO NORMAL (SUELO/AIRE)
@@ -326,7 +499,9 @@ public class PlayerMovement : MonoBehaviour
         camRight.Normalize();
 
         moveDirection = camForward * verticalInput + camRight * horizontalInput;
-
+        if(moveDirection==Vector3.zero){
+            HandleSlopeAntiSlide();
+        }
         // Normalizamos para que diagonal no corra mas
         if (moveDirection.sqrMagnitude > 1f) moveDirection.Normalize();
 
@@ -421,9 +596,11 @@ public class PlayerMovement : MonoBehaviour
     // =========================
     private void Jump()
     {
-        // Antes de saltar, reseteamos Y para que no acumule
         rb.linearVelocity = new Vector3(rb.linearVelocity.x, 0f, rb.linearVelocity.z);
         rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
+        lastJumpTime = Time.time;
+
+        OnJumpTriggered?.Invoke();
     }
 
     private void JumpFromSwing()
@@ -435,26 +612,38 @@ public class PlayerMovement : MonoBehaviour
         Vector3 jumpDir = camTransform.forward + Vector3.up * 0.5f;
         rb.AddForce(jumpDir.normalized * jumpForce * 1.5f, ForceMode.Impulse);
     }
+
     private void HandleJumpPhysics()
     {
-        // Solo aplicamos esto en el aire y si no estamos balanceandonos
         if (grounded || IsSwinging()) return;
 
-        // Caida 
+        float timeSinceJump = Time.time - lastJumpTime;
+
+        // Caida
         if (rb.linearVelocity.y < 0)
         {
-            rb.linearVelocity += Vector3.up * Physics.gravity.y * (fallMultiplier - 1) * Time.fixedDeltaTime;
+            rb.linearVelocity += Vector3.up * Physics.gravity.y * (fallMultiplier - 1f) * Time.fixedDeltaTime;
         }
-        // Corte de salto
-        else if (rb.linearVelocity.y > 0 && !isJumpHeld && (Time.time - lastSwingTime > 0.3f))
+        // Durante un instante inicial no endurecemos el salto
+        else if (rb.linearVelocity.y > 0)
         {
-            rb.linearVelocity += Vector3.up * Physics.gravity.y * (lowJumpMultiplier - 1) * Time.fixedDeltaTime;
+            if (timeSinceJump < jumpInitialLightTime)
+            {
+                return;
+            }
+
+            if (!isJumpHeld && (Time.time - lastSwingTime > 0.3f))
+            {
+                rb.linearVelocity += Vector3.up * Physics.gravity.y * (lowJumpMultiplier - 1f) * Time.fixedDeltaTime;
+            }
         }
         // Tiempo de suspension
         else if (Mathf.Abs(rb.linearVelocity.y) < hangTimeThreshold && isJumpHeld)
         {
-            // Contrarrestamos la gravedad estandar de Unity anadiendo una fuerza hacia arriba
-            rb.AddForce(Vector3.up * (Mathf.Abs(Physics.gravity.y) * (1 - hangTimeGravityMult)), ForceMode.Acceleration);
+            rb.AddForce(
+                Vector3.up * (Mathf.Abs(Physics.gravity.y) * (1 - hangTimeGravityMult)),
+                ForceMode.Acceleration
+            );
         }
     }
 
