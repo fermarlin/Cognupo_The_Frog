@@ -9,7 +9,7 @@ PhysicsMaterial:
   m_Name: CH_Cognupo_PhysMat
   serializedVersion: 2
   m_DynamicFriction: 0
-  m_StaticFriction: 0
+  m_StaticFriction: 1
   m_Bounciness: 0.2
   m_FrictionCombine: 2
   m_BounceCombine: 0
