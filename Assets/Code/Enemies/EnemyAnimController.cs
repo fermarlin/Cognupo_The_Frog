@@ -17,4 +17,9 @@ public class EnemyAnimController : MonoBehaviour
         e_animator.SetTrigger("GotHurt");
         e_animator.SetInteger("hurt", 1);
     }
+
+    public void StompedAnim()
+    {
+        e_animator.SetTrigger("GotStomped");
+    }
 }

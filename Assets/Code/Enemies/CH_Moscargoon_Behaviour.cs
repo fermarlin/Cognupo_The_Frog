@@ -1,7 +1,9 @@
 using System.Collections;
+using Unity.VisualScripting;
+using UnityEditorInternal.VersionControl;
 using UnityEngine;
 
-public class EnemyBehaviour : MonoBehaviour
+public class CH_Moscargoon_Behaviour : MonoBehaviour
 {
     // =========================
     // REFERENCES
@@ -10,6 +12,8 @@ public class EnemyBehaviour : MonoBehaviour
     [SerializeField] private EnemyMovement e_movement;
     [SerializeField] private EnemyAnimController e_animController;
     [SerializeField] private Rigidbody e_rb;
+    [SerializeField] private MovementBooster e_moveBoost;
+    [SerializeField] private BoxCollider e_headCollider;
 
     // =========================
     // CONFIG
@@ -29,6 +33,48 @@ public class EnemyBehaviour : MonoBehaviour
         e_rb = GetComponent<Rigidbody>();
 
         e_rb.isKinematic = true;
+    }
+
+    private void Update()
+    {
+        HeadCheck();
+    }
+
+    private void HeadCheck()
+    {
+        Collider[] colliders = new Collider[1];
+
+        Physics.OverlapBoxNonAlloc(e_headCollider.center, e_headCollider.size / 2, colliders);
+
+        if (colliders.Length >= 1 && colliders[1].CompareTag("Player"))
+        {
+            Stomped(colliders[1].GetComponent<GameObject>());
+        }
+    }
+
+    private void Stomped(GameObject stomper)
+    {
+        Rigidbody stompRb = stomper.GetComponent<Rigidbody>();
+
+        e_animController.StompedAnim();
+        e_stunTime = 0.3f;
+        if (!e_hurt)
+        {
+            e_hurt = true;
+            e_movement.enabled = false;
+            e_rb.isKinematic = false;
+
+            StartCoroutine(ChangeRbMode());
+        }
+
+        if (!e_rb.isKinematic)
+        {
+            e_moveBoost.Push(stompRb, stomper.transform.up, 50);
+        }
+        else
+        {
+            Debug.LogError("Could not apply hurt force, actor is not dynamic");
+        }
     }
 
     private void Hurt()
