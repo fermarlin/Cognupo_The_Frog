@@ -83,11 +83,20 @@ public class TargetLockHandler : MonoBehaviour
 
     void FixedUpdate()
     {
+        // Si teniamos lock pero el target ha sido destruido, soltamos el lock
+        if (activeTarget && currentTarget == null)
+        {
+            LockTarget(false);
+            return;
+        }
+
         // Si el enemigo se va demasiado lejos, soltamos el lock automaticamente
         if (activeTarget && currentTarget != null)
         {
             float distance = Vector3.Distance(playerTransform.position, currentTarget.position);
-            // Le damos un margen de 5 metros extra para que si el player esta en el limite y le damos no se active y desactive automaticamnete
+
+            // Le damos un margen de 5 metros extra para que si el player esta en el limite
+            // y le damos no se active y desactive automaticamente
             if (distance > enemyDetectRange + 5f)
             {
                 LockTarget(false);

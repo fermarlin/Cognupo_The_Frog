@@ -7,12 +7,16 @@ public class PlayerAnimator : MonoBehaviour
     [Header("References")]
     [SerializeField] private PlayerMovement playerMovement; // Script que controla el movimiento
     [SerializeField] private Rigidbody playerRb;    // Rigidbody para sacar velocidad
+    [SerializeField] private TargetLockHandler targetLockHandler; // Para saber si estamos haciendo ZTarget
+    [SerializeField] private Transform headBone; // Hueso de la cabeza que giraremos hacia el target
 
     [Header("Animator Parameters")]
     [SerializeField] private string isSwingingParam = "isSwinging";
     [SerializeField] private string speedParam = "Speed";
     [SerializeField] private string jumpTriggerParam = "Jump";
     [SerializeField] private string isGroundedParam = "isGrounded";
+    [SerializeField] private string isAttackingParam = "isAttacking";
+    [SerializeField] private string isZTargetingParam = "isZTargeting";
 
     private Animator anim;
 
@@ -27,6 +31,7 @@ public class PlayerAnimator : MonoBehaviour
         if (playerMovement != null){
             playerMovement.OnMovementStateChanged += OnMovementStateChanged;
             playerMovement.OnJumpTriggered += OnJumpTriggered;
+            playerMovement.OnAttackTriggered += OnAttackTriggered;
         }
 
     }
@@ -36,7 +41,7 @@ public class PlayerAnimator : MonoBehaviour
         if (playerMovement != null){
             playerMovement.OnMovementStateChanged -= OnMovementStateChanged;
             playerMovement.OnJumpTriggered -= OnJumpTriggered;
-
+            playerMovement.OnAttackTriggered -= OnAttackTriggered;
         }
     }
 
@@ -51,7 +56,37 @@ public class PlayerAnimator : MonoBehaviour
         // Aunque el estado principal venga del PlayerMovement,
         // actualizo cada frame speed para que la animacion sea fluida
         RefreshAnimator();
+        
     }
+
+    private void LateUpdate(){
+
+        RotateHeadToTarget();
+
+    }
+
+    private void RotateHeadToTarget()
+    {
+        // Si no hay cabeza o no hay sistema de target, no hacemos nada
+        if (headBone == null || targetLockHandler == null) return;
+
+        // Solo queremos girar la cabeza mientras estamos en ZTarget
+        if (!targetLockHandler.IsTargeting) return;
+
+        Transform currentTarget = targetLockHandler.GetCurrentTarget();
+        if (currentTarget == null) return;
+
+        // Igual que en PlayerAttack:
+        // usamos una rotacion global directa del hueso para que mire al objetivo
+        Vector3 dir = headBone.position - currentTarget.position;
+
+        // Evitamos errores si esta practicamente en el mismo punto
+        if (dir.sqrMagnitude < 0.0001f) return;
+
+        Quaternion targetRotation = Quaternion.LookRotation(dir.normalized, Vector3.up);
+        headBone.rotation = targetRotation;
+    }
+
 
     private void OnMovementStateChanged(PlayerMovement.MovementState previous, PlayerMovement.MovementState current)
     {
@@ -64,6 +99,21 @@ public class PlayerAnimator : MonoBehaviour
         if (anim == null) return;
         anim.SetTrigger(jumpTriggerParam);
     }
+    
+    private void OnAttackTriggered()
+    {
+        if (anim == null) return;
+
+        anim.SetBool(isAttackingParam, true);
+        CancelInvoke(nameof(ResetAttackBool));
+        Invoke(nameof(ResetAttackBool), 0.2f);
+    }
+
+    private void ResetAttackBool()
+    {
+        if (anim == null) return;
+        anim.SetBool(isAttackingParam, false);
+    }
 
     private void RefreshAnimator()
     {
@@ -71,6 +121,9 @@ public class PlayerAnimator : MonoBehaviour
 
         // Aplico bools del estado actual
         ApplyStateBools(playerMovement.state);
+
+        bool isZTargeting = targetLockHandler != null && targetLockHandler.IsTargeting;
+        anim.SetBool(isZTargetingParam, isZTargeting);
 
         //Si no tengo rigidbody no puedo sacar velocidades
         if (playerRb == null) return;
