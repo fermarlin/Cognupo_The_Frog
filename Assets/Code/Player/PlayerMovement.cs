@@ -58,7 +58,11 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float hangTimeThreshold = 1f;      // Velocidad Y donde empieza a considerarse el punto mas alto
     [SerializeField] private float hangTimeGravityMult = 0.5f;  // Cuanto reducimos la gravedad en el punto mas alto
     [SerializeField] private float jumpInitialLightTime = 0.12f; // tiempo con subida mas ligera
+    [SerializeField] private float maxUpVelocity = 25f;    
+    [SerializeField] private float externalBounceCooldown = 0.25f; // Evita que el spring se dispare infinitamente si sigues tocando el trigger
 
+    private bool externalBounceActive = false;          // Para saber si la subida actual viene de un spring
+    private float nextExternalBounceAllowedTime = 0f;   // Hasta cuando no puede volver a rebotar
     private float lastJumpTime;
     private bool readyToJump = true;
     private bool isJumpHeld = false; // Para saber si el jugador mantiene pulsado el boton
@@ -643,14 +647,26 @@ public class PlayerMovement : MonoBehaviour
 
         Vector3 flatVel = new Vector3(rb.linearVelocity.x, 0f, rb.linearVelocity.z);
 
+        // Si estoy en el suelo, el limite es la velocidad normal
+        // Si estoy en el aire, dejo que vaya al doble
+        float maxSpeed = grounded ? runSpeed : runSpeed * 1.5f;
+
         // Clampeo la velocidad horizontal
-        if (flatVel.magnitude > runSpeed)
+        if (flatVel.magnitude > maxSpeed)
         {
-            Vector3 limitedVel = flatVel.normalized * runSpeed;
+            Vector3 limitedVel = flatVel.normalized * maxSpeed;
             rb.linearVelocity = new Vector3(limitedVel.x, rb.linearVelocity.y, limitedVel.z);
         }
+        if (rb.linearVelocity.y > maxUpVelocity)
+        {
+            rb.linearVelocity = new Vector3(
+                rb.linearVelocity.x,
+                maxUpVelocity,
+                rb.linearVelocity.z
+            );
+        }
 
-        //Drag solo en suelo 
+        // Drag solo en suelo 
         rb.linearDamping = grounded ? groundDrag : 0f;
     }
 
@@ -662,7 +678,6 @@ public class PlayerMovement : MonoBehaviour
         // Si estamos sobre una plataforma que sube o se mueve,
         // conservamos solo su movimiento vertical para el salto
         Vector3 inheritedPlatformVelocity = Vector3.zero;
-
         if (currentPlatform != null)
         {
             inheritedPlatformVelocity = new Vector3(0f, currentPlatformVelocity.y, 0f);
@@ -705,16 +720,30 @@ public class PlayerMovement : MonoBehaviour
         // Caida
         if (rb.linearVelocity.y < 0)
         {
+            // Cuando empezamos a caer, el rebote del spring ya ha terminado
+            externalBounceActive = false;
+
             rb.linearVelocity += Vector3.up * Physics.gravity.y * (fallMultiplier - 1f) * Time.fixedDeltaTime;
         }
-        // Durante un instante inicial no endurecemos el salto
+        // Subida
         else if (rb.linearVelocity.y > 0)
         {
+            // Si esta subida viene de un spring, NO usamos isJumpHeld.
+            // Asi el spring llega siempre a la misma altura, mantengas espacio o no.
+            if (externalBounceActive)
+            {
+                return;
+            }
+
+            // Durante un instante inicial no endurecemos el salto normal
             if (timeSinceJump < jumpInitialLightTime)
             {
                 return;
             }
 
+            // Salto normal variable:
+            // Si no mantienes espacio, cortamos antes el salto.
+            // Si mantienes espacio, sube mas.
             if (!isJumpHeld && (Time.time - lastSwingTime > 0.3f))
             {
                 rb.linearVelocity += Vector3.up * Physics.gravity.y * (lowJumpMultiplier - 1f) * Time.fixedDeltaTime;
@@ -731,6 +760,8 @@ public class PlayerMovement : MonoBehaviour
     }
 
     private void ResetJump() => readyToJump = true; 
+
+
 
     // =========================
     // SWING CHECK
@@ -809,6 +840,36 @@ public class PlayerMovement : MonoBehaviour
     }
 
     // =========================
+    // EXTERNAL BOUNCE / SPRING
+    // =========================
+    public bool CanReceiveExternalBounce()
+    {
+        // Si aun estamos dentro del cooldown, no permitimos otro rebote
+        return Time.time >= nextExternalBounceAllowedTime;
+    }
+
+    public void RegisterExternalBounce()
+    {
+        // Marcamos que esta subida viene de un spring, no de un salto normal
+        externalBounceActive = true;
+
+        // Bloqueamos rebotes repetidos durante un momento
+        nextExternalBounceAllowedTime = Time.time + externalBounceCooldown;
+
+        // Cortamos el salto normal para que mantener espacio
+        isJumpHeld = false;
+        jumpPressedThisFrame = false;
+
+        //Evitamos que justo despues del spring se encadene un salto normal raro
+        readyToJump = false;
+        CancelInvoke(nameof(ResetJump));
+        Invoke(nameof(ResetJump), jumpCooldown);
+
+        // Usamos esto para que la fisica de salto tenga referencia temporal 
+        lastJumpTime = Time.time;
+    }
+
+    // =========================
     // CALLBACKS DE INPUT
     // =========================
     public void OnMovement(InputAction.CallbackContext context)
@@ -829,4 +890,6 @@ public class PlayerMovement : MonoBehaviour
             isJumpHeld = false;
         }
     }
+
+
 }

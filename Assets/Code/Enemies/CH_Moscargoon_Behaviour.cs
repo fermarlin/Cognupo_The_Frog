@@ -12,7 +12,6 @@ public class CH_Moscargoon_Behaviour : MonoBehaviour
     [SerializeField] private EnemyMovement e_movement;
     [SerializeField] private EnemyAnimController e_animController;
     [SerializeField] private Rigidbody e_rb;
-    [SerializeField] private MovementBooster e_moveBoost;
     [SerializeField] private BoxCollider e_headCollider;
 
     // =========================
@@ -69,7 +68,7 @@ public class CH_Moscargoon_Behaviour : MonoBehaviour
 
         if (!e_rb.isKinematic)
         {
-            e_moveBoost.Push(stompRb, stomper.transform.up, 50);
+            MovementBooster.Push(stompRb, stomper.transform.up, 50);
         }
         else
         {

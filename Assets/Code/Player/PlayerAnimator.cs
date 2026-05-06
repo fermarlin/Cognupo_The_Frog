@@ -9,6 +9,7 @@ public class PlayerAnimator : MonoBehaviour
     [SerializeField] private Rigidbody playerRb;    // Rigidbody para sacar velocidad
     [SerializeField] private TargetLockHandler targetLockHandler; // Para saber si estamos haciendo ZTarget
     [SerializeField] private Transform headBone; // Hueso de la cabeza que giraremos hacia el target
+    [SerializeField] private Health health;
 
     [Header("Animator Parameters")]
     [SerializeField] private string isSwingingParam = "isSwinging";
@@ -17,13 +18,21 @@ public class PlayerAnimator : MonoBehaviour
     [SerializeField] private string isGroundedParam = "isGrounded";
     [SerializeField] private string isAttackingParam = "isAttacking";
     [SerializeField] private string isZTargetingParam = "isZTargeting";
-
+    [SerializeField] private string damagedTrigger = "Damaged";
+    [SerializeField] private string deathTrigger = "Death";
+    
     private Animator anim;
 
     private void Awake()
     {
         anim = GetComponent<Animator>();
+        if (health != null)
+        {
+            health.OnDamaged += OnDamaged;
+            health.OnDeath += OnDeath;
+        }
     }
+
 
     private void OnEnable()
     {
@@ -42,6 +51,9 @@ public class PlayerAnimator : MonoBehaviour
             playerMovement.OnMovementStateChanged -= OnMovementStateChanged;
             playerMovement.OnJumpTriggered -= OnJumpTriggered;
             playerMovement.OnAttackTriggered -= OnAttackTriggered;
+            health.OnDamaged -= OnDamaged;
+            health.OnDeath -= OnDeath;
+    
         }
     }
 
@@ -136,6 +148,22 @@ public class PlayerAnimator : MonoBehaviour
         anim.SetFloat(speedParam, flatSpeed);
         
         anim.SetBool(isGroundedParam, playerMovement.IsGrounded);
+    }
+
+    private void OnDamaged(float damageReceived)
+    {
+        if (anim == null)
+            return;
+
+        anim.SetTrigger(damagedTrigger);
+    }
+
+    private void OnDeath()
+    {
+        if (anim == null)
+            return;
+
+        anim.SetTrigger(deathTrigger);
     }
 
     private void ApplyStateBools(PlayerMovement.MovementState currentState)
