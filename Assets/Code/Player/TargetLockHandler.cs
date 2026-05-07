@@ -34,6 +34,14 @@ public class TargetLockHandler : MonoBehaviour
     public LayerMask obstacleLayer;            // Objetos que tapan la vision
     public float targetSwitchCooldown = 0.5f;  // Para no saltar entre enemigos como locos si spameamos el cambiar de objetivo
 
+    [Header("Smooth Target Group")]
+    [SerializeField] private float targetProxySmoothTime = 0.15f; // Cuanto tarda el punto de camara en llegar al nuevo enemigo
+    [SerializeField] private float lostTargetSwitchCooldown = 0.1f; // Pequeño margen para no hacer varios cambios si mueren varios enemigos a la vez
+
+    [Header("Target Marker")]
+    [SerializeField] private float markerExtraHeight = 0.3f;       // Altura extra por encima del collider
+    [SerializeField] private float markerDefaultHeight = 2f;       // Altura si no tiene collider
+
     // =========================
     // ESTADO RUNTIME
     // =========================
@@ -41,6 +49,11 @@ public class TargetLockHandler : MonoBehaviour
     private List<Transform> nearbyTargets = new List<Transform>();
     private Transform currentTarget;
     private float lastSwitchTime;
+    private float lastLostTargetTime;
+
+    // En vez de meter el enemigo directamente en el TargetGroup, metemos este punto invisible, asi, si el enemigo se destruye, Cinemachine no pierde el target de golpe y no pega tiron.
+    private Transform targetProxy;
+    private Vector3 targetProxyVelocity;
 
     public System.Action<bool> onTargetLock;   // Evento por si otros scripts quieren reaccionar a que hemos targeteado algo
     
@@ -52,6 +65,8 @@ public class TargetLockHandler : MonoBehaviour
     {
         // Inicializamos el imput
         inputs = new PlayerInputs();
+
+        CreateTargetProxyIfNeeded();
     }
 
     private void OnEnable()
@@ -80,14 +95,38 @@ public class TargetLockHandler : MonoBehaviour
             playerMovement.OnMovementStateChanged -= HandleStateChanged;
     }
 
+    private void LateUpdate()
+    {
+        // Si estamos fijando target, actualizamos la posicion del marker cada frame.
+        // Lo hacemos en LateUpdate para que se coloque despues de que el enemigo se haya movido.
+        if (activeTarget && currentTarget != null && targetMarker != null)
+        {
+            UpdateTargetMarkerPosition();
+        }
+
+        // Actualizamos el proxy de la camara tambien en LateUpdate.
+        // Esto evita que el TargetGroup cambie de golpe cuando el enemigo se mueve o se cambia de target.
+        UpdateTargetProxyPosition();
+    }
+
 
     void FixedUpdate()
     {
+        // Si teniamos lock pero el target ha sido destruido, buscamos otro target antes de soltar la camara.
+        // Esto evita el tiron cuando un elemento del TargetGroup desaparece.
+        if (activeTarget && currentTarget == null)
+        {
+            HandleLostCurrentTarget();
+            return;
+        }
+
         // Si el enemigo se va demasiado lejos, soltamos el lock automaticamente
         if (activeTarget && currentTarget != null)
         {
             float distance = Vector3.Distance(playerTransform.position, currentTarget.position);
-            // Le damos un margen de 5 metros extra para que si el player esta en el limite y le damos no se active y desactive automaticamnete
+
+            // Le damos un margen de 5 metros extra para que si el player esta en el limite
+            // y le damos no se active y desactive automaticamente
             if (distance > enemyDetectRange + 5f)
             {
                 LockTarget(false);
@@ -139,17 +178,14 @@ public class TargetLockHandler : MonoBehaviour
 
         currentTarget = nearbyTargets[newIndex];
         
-        // Actualizamos el objetivo en el Target Group de Cinemachine
-        if (targetGroup != null && targetGroup.Targets.Count > 1)
-        {
-            targetGroup.Targets[1].Object = currentTarget;
-        }
+        // El TargetGroup mira al proxy, no directamente al enemigo.
+        // Asi el cambio de enemigo se suaviza en UpdateTargetProxyPosition().
+        SetTargetGroupTarget(targetProxy);
         
         // Movemos el marcador visual al nuevo enemigo
-        if(targetMarker) 
+        if (targetMarker != null)
         {
-            targetMarker.transform.SetParent(currentTarget);
-            targetMarker.transform.localPosition = Vector3.up * 2;
+            UpdateTargetMarkerPosition();
         }
         lastSwitchTime = Time.time;
     }
@@ -167,7 +203,15 @@ public class TargetLockHandler : MonoBehaviour
             if (bestTarget != null)
             {
                 currentTarget = bestTarget;
-                targetGroup.Targets[1].Object = currentTarget; 
+
+                CreateTargetProxyIfNeeded();
+
+                // Al activar el lock colocamos el proxy directamente en el enemigo.
+                targetProxy.position = GetCameraTargetPosition(currentTarget);
+                targetProxyVelocity = Vector3.zero;
+
+                SetTargetGroupTarget(targetProxy);
+
                 targetLockCamera.Follow = playerTransform;
                 targetLockCamera.LookAt = targetGroup.transform;
 
@@ -176,8 +220,7 @@ public class TargetLockHandler : MonoBehaviour
                     targetMarker = Instantiate(targetMarkerPrefab); 
                 }
                 targetMarker.SetActive(true);
-                targetMarker.transform.SetParent(currentTarget);
-                targetMarker.transform.localPosition = Vector3.up * 2;
+                UpdateTargetMarkerPosition();
 
                 SwitchCams(true);
                 onTargetLock?.Invoke(true);
@@ -199,6 +242,32 @@ public class TargetLockHandler : MonoBehaviour
         }
     }
 
+    private void HandleLostCurrentTarget()
+    {
+        // Si varios enemigos desaparecen casi a la vez, evitamos entrar muchas veces seguidas aqui.
+        if (Time.time < lastLostTargetTime + lostTargetSwitchCooldown)
+            return;
+
+        lastLostTargetTime = Time.time;
+
+        Transform bestTarget;
+        CollectTargetsAndGetMostInFront(out bestTarget);
+
+        if (bestTarget != null)
+        {
+            currentTarget = bestTarget;
+            SetTargetGroupTarget(targetProxy);
+
+            if (targetMarker != null)
+                UpdateTargetMarkerPosition();
+
+            return;
+        }
+
+        // Si no queda nadie cerca, entonces si soltamos el lock.
+        LockTarget(false);
+    }
+
     // =========================
     // DETECCION
     // =========================
@@ -214,6 +283,9 @@ public class TargetLockHandler : MonoBehaviour
 
         foreach (var hit in hits)
         {
+            if (hit == null)
+                continue;
+
             //Usamos el centro del volumen del enemigo, asi el Raycast no apunta a sus pies
             Vector3 targetCenter = hit.bounds.center;
             Vector3 rayOrigin = playerTransform.position + Vector3.up * 1.5f; // Altura de la vista del player
@@ -299,6 +371,126 @@ public class TargetLockHandler : MonoBehaviour
         }
 
         cameraAnimator.Play("FreeLookCamera");
+    }
+
+    private void CreateTargetProxyIfNeeded()
+    {
+        if (targetProxy != null)
+            return;
+
+        GameObject proxyObject = new GameObject("Target Lock Camera Proxy");
+        targetProxy = proxyObject.transform;
+
+        if (playerTransform != null)
+            targetProxy.position = playerTransform.position + Vector3.up * 1.5f;
+    }
+
+    private void SetTargetGroupTarget(Transform target)
+    {
+        if (targetGroup == null || target == null)
+            return;
+
+        // Tu TargetGroup tiene el player en el indice 0 y el target en el indice 1.
+        if (targetGroup.Targets.Count > 1)
+        {
+            targetGroup.Targets[1].Object = target;
+        }
+    }
+
+    private void UpdateTargetProxyPosition()
+    {
+        if (!activeTarget || targetProxy == null || currentTarget == null)
+            return;
+
+        Vector3 desiredPosition = GetCameraTargetPosition(currentTarget);
+
+        targetProxy.position = Vector3.SmoothDamp(
+            targetProxy.position,
+            desiredPosition,
+            ref targetProxyVelocity,
+            targetProxySmoothTime
+        );
+    }
+
+    private Vector3 GetCameraTargetPosition(Transform target)
+    {
+        Bounds targetBounds;
+
+        // Para la camara usamos el centro del collider si existe.
+        // Asi no mira a los pies del enemigo.
+        if (TryGetTargetBounds(target, out targetBounds))
+        {
+            return targetBounds.center;
+        }
+
+        return target.position + Vector3.up * 1.2f;
+    }
+
+    // =========================
+    // TARGET VISUAL
+    // =========================
+
+    private void UpdateTargetMarkerPosition()
+    {
+        if (currentTarget == null || targetMarker == null)
+            return;
+
+        Vector3 markerPosition = GetMarkerPosition(currentTarget);
+
+        // No lo hacemos hijo del enemigo.
+        // Asi evitamos problemas si el enemigo tiene escala rara, rotacion o huesos animados.
+        targetMarker.transform.SetParent(null);
+        targetMarker.transform.position = markerPosition;
+    }
+
+    private Vector3 GetMarkerPosition(Transform target)
+    {
+        Bounds targetBounds;
+
+        // Si el target tiene collider, usamos la parte mas alta del collider.
+        if (TryGetTargetBounds(target, out targetBounds))
+        {
+            return new Vector3(
+                targetBounds.center.x,
+                targetBounds.max.y + markerExtraHeight,
+                targetBounds.center.z
+            );
+        }
+
+        // Si no tiene collider, usamos una altura por defecto.
+        return target.position + Vector3.up * markerDefaultHeight;
+    }
+
+    private bool TryGetTargetBounds(Transform target, out Bounds finalBounds)
+    {
+        finalBounds = new Bounds();
+
+        Collider[] colliders;
+
+
+        Collider collider = target.GetComponent<Collider>();
+        colliders = collider != null ? new Collider[] { collider } : new Collider[0];
+        
+
+        bool hasBounds = false;
+
+        foreach (Collider col in colliders)
+        {
+            if (col == null)
+                continue;
+
+            if (!hasBounds)
+            {
+                finalBounds = col.bounds;
+                hasBounds = true;
+            }
+            else
+            {
+                finalBounds.Encapsulate(col.bounds);
+            }
+        }
+
+        return hasBounds;
     }
     
 

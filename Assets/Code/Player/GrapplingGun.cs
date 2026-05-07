@@ -15,7 +15,7 @@ public class GrapplingGun : MonoBehaviour
 
     private PlayerInputs inputs;
 
-// =========================
+    // =========================
     // REFERENCES
     // =========================
 
@@ -271,13 +271,26 @@ public class GrapplingGun : MonoBehaviour
                     return;
                 }
             }
+
+            // Si se pulso tongue pero no habia un target valido para engancharse,
+            // lanzamos el evento de ataque para usar la lengua como ataque
+            if (playerMovement != null)
+                playerMovement.TriggerAttack();
+
+            return;
         }
 
         // Si no hay target lock, usamos el candidato del cono
         if (currentFreeCandidate != null)
         {
             AttachRope(currentFreeCandidate);
+            return;
         }
+
+        // Si se pulso tongue y no habia ningun punto de anclaje,
+        // activamos el ataque
+        if (playerMovement != null)
+            playerMovement.TriggerAttack();
     }
 
     // =========================
