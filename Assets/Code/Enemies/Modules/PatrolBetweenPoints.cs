@@ -19,6 +19,8 @@ public class PatrolBetweenPoints : MonoBehaviour
     private int direction = 1;         // 1 = avanza, -1 = retrocede
 
     private bool hasFinished = false;  // Para saber si ya termino el estado de patrulla
+    //[HideInInspector]
+    public bool isPatrolling = false;
 
     private void Start()
     {
@@ -49,7 +51,7 @@ public class PatrolBetweenPoints : MonoBehaviour
         // Si solo hay uno, no se movera.
         nextPointIndex = localPoints.Length > 1 ? 1 : 0;
 
-        // Si solo hay un punto, no hay patrulla real
+        //Si solo hay un punto, no patrullo
         hasFinished = localPoints.Length <= 1;
     }
 
@@ -61,9 +63,12 @@ public class PatrolBetweenPoints : MonoBehaviour
     public void Patrol(float speedMultiplier)
     {
         // Si ya termino o no hay suficientes puntos, no se mueve
-        if (hasFinished || globalPoints == null || globalPoints.Length <= 1)
+        if (hasFinished || globalPoints == null || globalPoints.Length <= 1){
+            isPatrolling = false;
             return;
+        }
 
+        isPatrolling = true;
         // Punto al que se dirige ahora mismo
         Vector3 targetPoint = globalPoints[nextPointIndex];
 
@@ -79,10 +84,11 @@ public class PatrolBetweenPoints : MonoBehaviour
             // Ahora el punto al que ha llegado pasa a ser el punto actual
             currentPointIndex = nextPointIndex;
 
-            // Calculamos cual sera el siguiente punto
+            //Calculamos cual sera el siguiente punto
             if (!CalculateNextPoint())
             {
                 hasFinished = true;
+                isPatrolling = false;
                 return;
             }
 
@@ -153,7 +159,7 @@ public class PatrolBetweenPoints : MonoBehaviour
 
     private void LookToDirection(Vector3 direction)
     {
-        // Si no hay direccion real, no giramos
+        // Si no hay direccion, no giramos
         if (direction.sqrMagnitude <= 0.001f)
             return;
 

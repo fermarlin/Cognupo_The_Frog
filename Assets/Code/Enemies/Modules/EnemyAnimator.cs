@@ -37,6 +37,7 @@ public class EnemyAnimator : MonoBehaviour
     private float damagedTimer;
     private float attackingTimer;
     private bool isDead;
+    private PatrolBetweenPoints patrol;
 
     private EnemyAnimationState currentState = EnemyAnimationState.Idle;
 
@@ -51,6 +52,11 @@ public class EnemyAnimator : MonoBehaviour
         if (health == null)
         {
             health = GetComponent<Health>();
+        }
+
+        if (patrol == null)
+        {
+            patrol = GetComponent<PatrolBetweenPoints>();
         }
 
         if (rb == null)
@@ -146,12 +152,11 @@ public class EnemyAnimator : MonoBehaviour
         if (isDead)
             return;
 
-        // Si ya estoy en ataque, no relanzo el trigger
         if (currentState == EnemyAnimationState.Attacking)
             return;
 
         attackingTimer = attackingStateTime;
-
+        
         SetState(EnemyAnimationState.Attacking);
     }
 
@@ -205,6 +210,12 @@ public class EnemyAnimator : MonoBehaviour
             horizontalVelocity.y = 0f;
 
             currentSpeed = horizontalVelocity.magnitude;
+        }
+
+        if(currentSpeed <= 0.1 && patrol!=null){
+            if(patrol.isPatrolling){
+                currentSpeed = maxSpeedForAnimation;
+            }
         }
 
         float normalizedSpeed = 0f;

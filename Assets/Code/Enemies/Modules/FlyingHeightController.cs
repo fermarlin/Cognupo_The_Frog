@@ -23,7 +23,7 @@ public class FlyingHeightController : MonoBehaviour
 
     public void KeepHeightFromGround()
     {
-        // Lanzamos el raycast desde arriba hacia abajo. Asi, aunque el enemigo atraviese un poco el suelo, podemos volver a encontrar el suelo desde arriba.
+        //Lanzamos el raycast desde arriba hacia abajo
         Vector3 rayStartPosition = transform.position + Vector3.up * groundRayStartHeight;
 
         Ray ray = new Ray(rayStartPosition, Vector3.down);

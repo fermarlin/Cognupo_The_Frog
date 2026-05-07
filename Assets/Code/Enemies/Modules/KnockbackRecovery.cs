@@ -10,7 +10,7 @@ public class KnockbackRecovery : MonoBehaviour
     [SerializeField] private float knockbackControlDelay = 0.25f; // Tiempo que dejamos actuar al golpe
     [SerializeField] private float knockbackRecoveryTime = 1f;    // Tiempo total de recuperacion
     [SerializeField] private float recoveryMoveMultiplier = 2f;   // Velocidad extra al volver
-    [SerializeField] private float velocityStopSpeed = 8f;        // Velocidad con la que frenamos
+    [SerializeField] private float velocityStopSpeed = 8f;   // Velocidad con la que frenamos
 
     private float knockbackTimer;
     private float knockbackDelayTimer;

@@ -215,9 +215,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0418d46d1b78a4dd0ad382d5a725f4d7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 6
+  maxHealth: 4
   destroyDelay: 0
   destroyOnDeath: 1
+  onDestroyPrefab: {fileID: 140434, guid: dd38b45e2135c854d87201aa3d863978, type: 3}
   useKnockback: 1
   knockbackForce: 10
   knockbackUpForce: 10
@@ -360,6 +361,7 @@ MonoBehaviour:
   patrolPointDistance: 0.3
   loop: 1
   closeLoop: 1
+  isPatrolling: 0
 --- !u!114 &6036661528968120262
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -408,7 +410,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   animator: {fileID: 1059389016353785016}
   health: {fileID: 3404303589617835869}
-  rb: {fileID: 4479418288640029029}
+  rb: {fileID: 0}
   damagedStateTime: 0.35
   attackingStateTime: 0.5
   maxSpeedForAnimation: 6
