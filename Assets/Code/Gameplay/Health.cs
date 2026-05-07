@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 public class Health : MonoBehaviour
@@ -10,6 +11,11 @@ public class Health : MonoBehaviour
     [SerializeField] private float destroyDelay = 0f;
 
     [SerializeField] private bool destroyOnDeath = true; // Si queremos que se destruya al morir
+
+    [Header("Death Prefab")]
+    [SerializeField] private GameObject onDestroyPrefab; // Prefab que aparece justo antes de destruirse
+
+    [SerializeField] private Vector3 onDestroyPrefabOffset = Vector3.up; // Offset para que aparezca un poco encima
 
     [Header("Knockback")]
     [SerializeField] private bool useKnockback = false; // Si queremos que reciba knockback al recibir daño
@@ -88,14 +94,29 @@ public class Health : MonoBehaviour
         {
             isDead = true;
 
-            // Aviso a otros sistemas
+            // Aviso a otros sistemas de que ha muerto
             OnDeath?.Invoke();
 
-            // Si queremos que se destruya al morir, lo destruimos
+            // Si queremos destruirlo, esperamos el delay y justo antes instanciamos el prefab
             if (destroyOnDeath)
             {
-                Destroy(gameObject, destroyDelay);
+                StartCoroutine(DestroyAfterDelay());
             }
         }
+    }
+
+    private IEnumerator DestroyAfterDelay()
+    {
+        // Esperamos el tiempo que hayas puesto en el inspector
+        yield return new WaitForSeconds(destroyDelay);
+
+        // Justo antes de destruir el enemigo, instanciamos el prefab
+        if (onDestroyPrefab != null)
+        {
+            Instantiate(onDestroyPrefab, transform.position + onDestroyPrefabOffset, transform.rotation);
+        }
+
+        //Destruimos este objeto
+        Destroy(gameObject);
     }
 }

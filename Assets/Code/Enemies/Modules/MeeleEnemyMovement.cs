@@ -29,13 +29,13 @@ public class MeeleEnemyMovement : MonoBehaviour
 
     private void Awake()
     {
-        // Si no hemos puesto el EnemyAnimator por inspector, lo buscamos.
+        // Si no hemos puesto el EnemyAnimator por inspector
         if (enemyAnimator == null)
         {
             enemyAnimator = GetComponent<EnemyAnimator>();
         }
 
-        // Si no hemos puesto el Rigidbody por inspector, lo buscamos.
+        // Si no hemos puesto el Rigidbody por inspector
         if (rb == null)
         {
             rb = GetComponent<Rigidbody>();
@@ -44,7 +44,7 @@ public class MeeleEnemyMovement : MonoBehaviour
 
     private void Update()
     {
-        // Bajamos el timer del ataque.
+        //Bajamos el timer del ataque.
         // Esto evita que el enemigo llame a la animacion de ataque cada frame.
         if (attackTimer > 0f)
         {
@@ -95,7 +95,7 @@ public class MeeleEnemyMovement : MonoBehaviour
             return;
         }
 
-        // Si esta marcado embestir, va rapido hacia el player.
+        //Si esta marcado embestir, va rapido hacia el player.
         if (chargeToPlayer)
         {
             MoveTowardsTarget(target, chargeSpeed, speedMultiplier);
@@ -188,8 +188,6 @@ public class MeeleEnemyMovement : MonoBehaviour
         // Calculamos la velocidad final.
         Vector3 finalVelocity = direction * speed * speedMultiplier;
 
-        // Si tenemos Rigidbody, movemos usando velocidad.
-        // Asi EnemyAnimator puede leer la velocidad y actualizar el parametro Speed.
         if (rb != null)
         {
             rb.linearVelocity = new Vector3(

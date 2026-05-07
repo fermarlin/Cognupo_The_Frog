@@ -1,7 +1,6 @@
 using UnityEngine;
 
 // Este script es el cerebro concreto del Moscardeux.
-// Decide cuando patrulla, cuando persigue, cuando dispara y cuando se esta recuperando de un knockback.
 public class CH_Moscardeux_Behaviour : MonoBehaviour
 {
     [Header("Modules")]
@@ -69,13 +68,13 @@ public class CH_Moscardeux_Behaviour : MonoBehaviour
 
     private void HandleKnockbackState()
     {
-        // Actualiza la recuperacion. Si devuelve false, significa que aun estamos dejando que el golpe se note.
+        // Actualiza la recuperacion.
         bool canMoveAgain = knockbackRecovery.UpdateRecovery();
 
         if (!canMoveAgain)
             return;
 
-        // Mientras se recupera, puede volver a posicionarse, ero no dispara.
+        //Mientras se recupera, puede volver a posicionarse, ero no dispara.
         if (player != null && rangedMovement != null)
         {
             rangedMovement.HandleTarget(
