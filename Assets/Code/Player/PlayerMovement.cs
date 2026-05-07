@@ -16,12 +16,22 @@ public class PlayerMovement : MonoBehaviour
     [Header("Slope")]
     [SerializeField] private float maxWalkableSlopeAngle = 70f; // Hasta este angulo no resbala
     [SerializeField] private float slopeStickForce = 5f;        // Fuerza para pegarlo al suelo sin que patine
+
+    // =========================
+    // PLATAFORMAS MOVILES
+    // =========================
+    private PlatformMover currentPlatform;      // Plataforma en la que estamos ahora mismo
+    private Vector3 currentPlatformVelocity;    // Velocidad actual de esa plataforma
+    private Vector3 lastPlatformPosition;       // Ultima posicion conocida de la plataforma
+    private bool wasOnPlatformLastFrame;        // Para saber si venimos de una plataforma del frame anterior
     // =========================
     // VISUALES
     // =========================
     [Header("Visuals")]
     [SerializeField] private Transform playerMesh;         // El mesh que giramo
     [SerializeField] private float rotationSpeed = 10f;    // Suavidad de giro
+    [SerializeField] private float attackRotationLockTime = .2f; // Tiempo que bloqueamos la rotacion al atacar
+    private float rotationLockUntilTime = 0f;                   // Hasta cuando no puede rotar
     
     [Header("Ground Visual Rotation")]
     [SerializeField] private float groundAlignRayLength = 1.5f;    // Distancia del raycast hacia abajo para leer la normal
@@ -48,7 +58,11 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float hangTimeThreshold = 1f;      // Velocidad Y donde empieza a considerarse el punto mas alto
     [SerializeField] private float hangTimeGravityMult = 0.5f;  // Cuanto reducimos la gravedad en el punto mas alto
     [SerializeField] private float jumpInitialLightTime = 0.12f; // tiempo con subida mas ligera
+    [SerializeField] private float maxUpVelocity = 25f;    
+    [SerializeField] private float externalBounceCooldown = 0.25f; // Evita que el spring se dispare infinitamente si sigues tocando el trigger
 
+    private bool externalBounceActive = false;          // Para saber si la subida actual viene de un spring
+    private float nextExternalBounceAllowedTime = 0f;   // Hasta cuando no puede volver a rebotar
     private float lastJumpTime;
     private bool readyToJump = true;
     private bool isJumpHeld = false; // Para saber si el jugador mantiene pulsado el boton
@@ -95,7 +109,7 @@ public class PlayerMovement : MonoBehaviour
     // Este evento lo podemos usar para animaciones o lo que nos haga falta mas adelante
     public event Action<MovementState, MovementState> OnMovementStateChanged;
     public event Action OnJumpTriggered;
-
+    public event Action OnAttackTriggered;
     private void OnEnable()
     {
         // Creamos el input wrapper una sola vez
@@ -147,7 +161,7 @@ public class PlayerMovement : MonoBehaviour
             whatIsGround,
             QueryTriggerInteraction.Ignore
         );
-
+        UpdateCurrentPlatform();
         MyInput();         //Todo el tema del movimiento y tal
         SpeedControl();    // Limita velocidad horizontal
         StateHandler();    // Calcula running/air/swinging y lanza evento si cambia
@@ -181,6 +195,8 @@ public class PlayerMovement : MonoBehaviour
         // Si estamos en swing, NO usamos el movimiento
         if (IsSwinging())
         {
+            wasOnPlatformLastFrame = false;
+
             // Aplicamos el impulso una sola vez al empezar a colgar
             if (pendingSwingBoost)
             {
@@ -191,6 +207,10 @@ public class PlayerMovement : MonoBehaviour
             HandleSwingPendulum();
             return;
         }
+
+        // Si estamos en una plataforma y seguimos en el suelo,
+        // movemos al player con el desplazamiento real de la plataforma
+        ApplyPlatformDeltaMovement();
 
         // Movimiento normal por fuerzas
         MovePlayerNormal();
@@ -283,6 +303,50 @@ public class PlayerMovement : MonoBehaviour
     private void HandleRotation()
     {
         if (playerMesh == null) return;
+        if (Time.time < rotationLockUntilTime) return;
+
+        // Si estamos haciendo ZTarget, el player rota siempre mirando al objetivo bloqueado
+        if (targetLockHandler != null && targetLockHandler.IsTargeting)
+        {
+            Transform currentTarget = targetLockHandler.GetCurrentTarget();
+
+            if (currentTarget != null)
+            {
+                Vector3 dirToTarget = currentTarget.position - playerMesh.position;
+                dirToTarget.y = 0f;
+
+                if (dirToTarget.sqrMagnitude > 0.001f)
+                {
+                    Quaternion yawRot = Quaternion.LookRotation(dirToTarget.normalized, Vector3.up);
+
+                    if (TryGetGroundNormal(out Vector3 groundNormal))
+                    {
+                        Vector3 projectedForward = Vector3.ProjectOnPlane(yawRot * Vector3.forward, groundNormal).normalized;
+
+                        if (projectedForward.sqrMagnitude > 0.001f)
+                        {
+                            Quaternion groundRot = Quaternion.LookRotation(projectedForward, groundNormal);
+                            groundRot = ClampRotationTilt(groundRot, groundNormal, maxGroundTilt);
+
+                            playerMesh.rotation = Quaternion.Slerp(
+                                playerMesh.rotation,
+                                groundRot,
+                                rotationSpeed * Time.deltaTime
+                            );
+                            return;
+                        }
+                    }
+
+                    playerMesh.rotation = Quaternion.Slerp(
+                        playerMesh.rotation,
+                        yawRot,
+                        rotationSpeed * Time.deltaTime
+                    );
+                }
+            }
+
+            return;
+        }
 
         Vector3 targetDirection = Vector3.zero;
 
@@ -490,7 +554,7 @@ public class PlayerMovement : MonoBehaviour
 
     private void MovePlayerNormal()
     {
-        //Como nuestro presonaje se mueve en funcion de donde mira la camara pues lo pillamos asi
+        // Como nuestro personaje se mueve en funcion de donde mira la camara pues lo pillamos asi
         Vector3 camForward = camTransform.forward;
         Vector3 camRight = camTransform.right;
         camForward.y = 0f;
@@ -499,9 +563,12 @@ public class PlayerMovement : MonoBehaviour
         camRight.Normalize();
 
         moveDirection = camForward * verticalInput + camRight * horizontalInput;
-        if(moveDirection==Vector3.zero){
+
+        if (moveDirection == Vector3.zero)
+        {
             HandleSlopeAntiSlide();
         }
+
         // Normalizamos para que diagonal no corra mas
         if (moveDirection.sqrMagnitude > 1f) moveDirection.Normalize();
 
@@ -580,14 +647,26 @@ public class PlayerMovement : MonoBehaviour
 
         Vector3 flatVel = new Vector3(rb.linearVelocity.x, 0f, rb.linearVelocity.z);
 
+        // Si estoy en el suelo, el limite es la velocidad normal
+        // Si estoy en el aire, dejo que vaya al doble
+        float maxSpeed = grounded ? runSpeed : runSpeed * 1.5f;
+
         // Clampeo la velocidad horizontal
-        if (flatVel.magnitude > runSpeed)
+        if (flatVel.magnitude > maxSpeed)
         {
-            Vector3 limitedVel = flatVel.normalized * runSpeed;
+            Vector3 limitedVel = flatVel.normalized * maxSpeed;
             rb.linearVelocity = new Vector3(limitedVel.x, rb.linearVelocity.y, limitedVel.z);
         }
+        if (rb.linearVelocity.y > maxUpVelocity)
+        {
+            rb.linearVelocity = new Vector3(
+                rb.linearVelocity.x,
+                maxUpVelocity,
+                rb.linearVelocity.z
+            );
+        }
 
-        //Drag solo en suelo 
+        // Drag solo en suelo 
         rb.linearDamping = grounded ? groundDrag : 0f;
     }
 
@@ -596,7 +675,24 @@ public class PlayerMovement : MonoBehaviour
     // =========================
     private void Jump()
     {
-        rb.linearVelocity = new Vector3(rb.linearVelocity.x, 0f, rb.linearVelocity.z);
+        // Si estamos sobre una plataforma que sube o se mueve,
+        // conservamos solo su movimiento vertical para el salto
+        Vector3 inheritedPlatformVelocity = Vector3.zero;
+        if (currentPlatform != null)
+        {
+            inheritedPlatformVelocity = new Vector3(0f, currentPlatformVelocity.y, 0f);
+        }
+
+        rb.linearVelocity = new Vector3(
+            rb.linearVelocity.x,
+            Mathf.Max(rb.linearVelocity.y, inheritedPlatformVelocity.y),
+            rb.linearVelocity.z
+        );
+
+        // En cuanto saltamos dejamos de considerar que seguimos "pegados"
+        // al desplazamiento de la plataforma
+        wasOnPlatformLastFrame = false;
+
         rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
         lastJumpTime = Time.time;
 
@@ -607,6 +703,8 @@ public class PlayerMovement : MonoBehaviour
     {
         // Al saltar cuando estamos enganchados cortamos la cuerda
         if (grapplingGun != null) grapplingGun.StopGrapple();
+
+        wasOnPlatformLastFrame = false;
 
         // Salto con direccion hacia camara y un poco hacia arriba
         Vector3 jumpDir = camTransform.forward + Vector3.up * 0.5f;
@@ -622,16 +720,30 @@ public class PlayerMovement : MonoBehaviour
         // Caida
         if (rb.linearVelocity.y < 0)
         {
+            // Cuando empezamos a caer, el rebote del spring ya ha terminado
+            externalBounceActive = false;
+
             rb.linearVelocity += Vector3.up * Physics.gravity.y * (fallMultiplier - 1f) * Time.fixedDeltaTime;
         }
-        // Durante un instante inicial no endurecemos el salto
+        // Subida
         else if (rb.linearVelocity.y > 0)
         {
+            // Si esta subida viene de un spring, NO usamos isJumpHeld.
+            // Asi el spring llega siempre a la misma altura, mantengas espacio o no.
+            if (externalBounceActive)
+            {
+                return;
+            }
+
+            // Durante un instante inicial no endurecemos el salto normal
             if (timeSinceJump < jumpInitialLightTime)
             {
                 return;
             }
 
+            // Salto normal variable:
+            // Si no mantienes espacio, cortamos antes el salto.
+            // Si mantienes espacio, sube mas.
             if (!isJumpHeld && (Time.time - lastSwingTime > 0.3f))
             {
                 rb.linearVelocity += Vector3.up * Physics.gravity.y * (lowJumpMultiplier - 1f) * Time.fixedDeltaTime;
@@ -649,12 +761,112 @@ public class PlayerMovement : MonoBehaviour
 
     private void ResetJump() => readyToJump = true; 
 
+
+
     // =========================
     // SWING CHECK
     // =========================
     private bool IsSwinging()
     {
         return grapplingGun != null && grapplingGun.IsGrappling();
+    }
+
+    // =========================
+    // PLATAFORMA MOVIL
+    // =========================
+    private void UpdateCurrentPlatform()
+    {
+        currentPlatform = null;
+        currentPlatformVelocity = Vector3.zero;
+
+        if (!grounded) return;
+
+        if (Physics.Raycast(
+            groundCheck.position + Vector3.up * 0.1f,
+            Vector3.down,
+            out RaycastHit hit,
+            groundCheckRadius,
+            whatIsGround,
+            QueryTriggerInteraction.Ignore))
+        {
+            if (hit.collider.CompareTag("MovementPlatform"))
+            {
+                currentPlatform = hit.collider.GetComponentInParent<PlatformMover>();
+
+                if (currentPlatform != null)
+                {
+                    currentPlatformVelocity = currentPlatform.CurrentVelocity;
+                }
+            }
+        }
+    }
+    private void ApplyPlatformDeltaMovement()
+    {
+        // Solo queremos que la plataforma arrastre al jugador
+        // mientras sigue apoyado en ella y no esta en swing
+        if (!grounded || currentPlatform == null)
+        {
+            wasOnPlatformLastFrame = false;
+            return;
+        }
+
+        Vector3 currentPlatformPosition = currentPlatform.transform.position;
+
+        // El primer frame sobre la plataforma solo guardamos posicion,
+        // para que no meta un salto raro de desplazamiento
+        if (!wasOnPlatformLastFrame)
+        {
+            lastPlatformPosition = currentPlatformPosition;
+            wasOnPlatformLastFrame = true;
+            return;
+        }
+
+        // Calculamos cuanto se ha movido la plataforma desde el ultimo FixedUpdate
+        Vector3 platformDelta = currentPlatformPosition - lastPlatformPosition;
+
+        // Movemos al rigidbody del jugador la misma distancia
+        rb.MovePosition(rb.position + platformDelta);
+
+        // Guardamos posicion para el siguiente frame
+        lastPlatformPosition = currentPlatformPosition;
+    }
+    // =========================
+    // ATAQUE
+    // =========================
+    public void TriggerAttack()
+    {
+        rotationLockUntilTime = Time.time + attackRotationLockTime;
+        OnAttackTriggered?.Invoke();
+    }
+
+    // =========================
+    // EXTERNAL BOUNCE / SPRING
+    // =========================
+    public bool CanReceiveExternalBounce()
+    {
+        // Si aun estamos dentro del cooldown, no permitimos otro rebote
+        return Time.time >= nextExternalBounceAllowedTime;
+    }
+
+    public void RegisterExternalBounce()
+    {
+        // Marcamos que esta subida viene de un spring, no de un salto normal
+        externalBounceActive = true;
+
+        // Bloqueamos rebotes repetidos durante un momento
+        nextExternalBounceAllowedTime = Time.time + externalBounceCooldown;
+
+        // Cortamos el salto normal para que mantener espacio
+        isJumpHeld = false;
+        jumpPressedThisFrame = false;
+
+        //Evitamos que justo despues del spring se encadene un salto normal raro
+        readyToJump = false;
+        CancelInvoke(nameof(ResetJump));
+        Invoke(nameof(ResetJump), jumpCooldown);
+
+        // Usamos esto para que la fisica de salto tenga referencia temporal 
+        lastJumpTime = Time.time;
     }
 
     // =========================
@@ -678,4 +890,6 @@ public class PlayerMovement : MonoBehaviour
             isJumpHeld = false;
         }
     }
+
+
 }
