@@ -1,113 +1,56 @@
-using System.Collections;
-using Unity.VisualScripting;
-using UnityEditorInternal.VersionControl;
 using UnityEngine;
 
+// Este script es el cerebro concreto del Moscargoon.
 public class CH_Moscargoon_Behaviour : MonoBehaviour
 {
-    // =========================
-    // REFERENCES
-    // =========================
-    [Header("References")]
-    [SerializeField] private EnemyMovement e_movement;
-    [SerializeField] private EnemyAnimController e_animController;
-    [SerializeField] private Rigidbody e_rb;
-    [SerializeField] private BoxCollider e_headCollider;
+    [Header("Modules")]
+    [SerializeField] private FlyingHeightController heightController;
+    [SerializeField] private PatrolBetweenPoints patrol;
+    [SerializeField] private KnockbackRecovery knockbackRecovery;
 
-    // =========================
-    // CONFIG
-    // =========================
-    [Header("Config")]
-    [SerializeField] private float e_stunTime = 0;
+    private Transform player;
 
-    // =========================
-    // PRIVATES/UTILITY
-    // =========================
-    private bool e_hurt = false;
-
-    private void Start()
+    private void Awake()
     {
-        e_movement = GetComponent<EnemyMovement>();
-        e_animController = GetComponent<EnemyAnimController>();
-        e_rb = GetComponent<Rigidbody>();
+        // Si no estan puestos por Inspector, los buscamos en este GameObject.
+        if (heightController == null)
+            heightController = GetComponent<FlyingHeightController>();
 
-        e_rb.isKinematic = true;
+        if (patrol == null)
+            patrol = GetComponent<PatrolBetweenPoints>();
+
+        if (knockbackRecovery == null)
+            knockbackRecovery = GetComponent<KnockbackRecovery>();
     }
 
     private void Update()
     {
-        HeadCheck();
-    }
-
-    private void HeadCheck()
-    {
-        Collider[] colliders = new Collider[1];
-
-        Physics.OverlapBoxNonAlloc(e_headCollider.center, e_headCollider.size / 2, colliders);
-
-        if (colliders.Length >= 1 && colliders[1].CompareTag("Player"))
+        // Siempre intenta mantener su altura.
+        if (heightController != null)
         {
-            Stomped(colliders[1].GetComponent<GameObject>());
+            heightController.KeepHeightFromGround();
+        }
+
+
+        // Si esta recuperandose de un knockback dejamos que el modulo de recuperacion controle ese momento.
+        if (knockbackRecovery != null && knockbackRecovery.IsRecovering)
+        {
+            HandleKnockbackState();
+            return;
+        }
+
+
+        // Si no tengo player, patrullo.
+        if (patrol != null)
+        {
+            patrol.Patrol();
         }
     }
 
-    private void Stomped(GameObject stomper)
+    private void HandleKnockbackState()
     {
-        Rigidbody stompRb = stomper.GetComponent<Rigidbody>();
+        // Actualiza la recuperacion.
+        bool canMoveAgain = knockbackRecovery.UpdateRecovery();
 
-        e_animController.StompedAnim();
-        e_stunTime = 0.3f;
-        if (!e_hurt)
-        {
-            e_hurt = true;
-            e_movement.enabled = false;
-            e_rb.isKinematic = false;
-
-            StartCoroutine(ChangeRbMode());
-        }
-
-        if (!e_rb.isKinematic)
-        {
-            MovementBooster.Push(stompRb, stomper.transform.up, 50);
-        }
-        else
-        {
-            Debug.LogError("Could not apply hurt force, actor is not dynamic");
-        }
-    }
-
-    private void Hurt()
-    {
-        e_animController.HurtAnim();
-        e_stunTime = 0.3f;
-        if (!e_hurt)
-        {
-            e_hurt = true;
-            e_movement.enabled = false;
-            e_rb.isKinematic = false;
-
-            StartCoroutine(ChangeRbMode());
-        }
-
-        if (!e_rb.isKinematic)
-        {
-            e_rb.AddForce(Vector3.forward * -15, ForceMode.Impulse);
-        }
-        else
-        {
-            Debug.LogError("Could not apply hurt force, actor is not dynamic");
-        }
-    }
-
-    IEnumerator ChangeRbMode()
-    {
-        yield return new WaitForSeconds(e_stunTime);
-
-        e_hurt = false;
-        e_movement.enabled = true;
-        e_rb.isKinematic = true;
-
-        e_stunTime = 0;
-        yield return null;
     }
 }
