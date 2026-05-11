@@ -1,22 +1,24 @@
 using UnityEngine;
 
-// Este script es el cerebro concreto del Beetle.
-public class CH_Beetle_Behavior : MonoBehaviour
+// Este script es el cerebro concreto de McGregor.
+// McGregor persigue al player y cuando va a atacar
+// se queda completamente parado hasta que termina el ataque.
+public class CH_McGregor_Behavior : MonoBehaviour
 {
-    
     [Header("Movement")]
 
-    [SerializeField] private float maxSpeed = 8f;                 // Velocidad cuando carga hacia el player
+    [SerializeField] private float maxSpeed = 8f;                    // Velocidad cuando va hacia el player
     [SerializeField] private float rotationSpeed = 10f;              // Velocidad a la que gira mirando al player
 
     [Header("Melee Attack")]
 
     [SerializeField] private int meleeDamage = 1;                    // Daño del ataque cuerpo a cuerpo
-    [SerializeField] private float meleeAttackRange = 1.6f;          // Distancia para atacar sin cargar
-    [SerializeField] private float meleeAttackCooldown = 1f;         // Tiempo entre ataques melee
+    [SerializeField] private float meleeAttackRange = 1.6f;          // Distancia a la que puede atacar
+    [SerializeField] private float meleeAttackCooldown = 1f;         // Tiempo entre ataques
+    [SerializeField] private float attackDuration = 0.8f;            // Tiempo que dura el ataque
     [SerializeField] private Transform attackPoint;                  // Punto desde donde hace el ataque
-    [SerializeField] private float attackRadius = 1f;                // Radio del golpe melee
-    [SerializeField] string playerTag = "Player";  
+    [SerializeField] private float attackRadius = 1f;                // Radio del golpe
+    [SerializeField] private string playerTag = "Player";
 
     [Header("Modules")]
 
@@ -31,8 +33,10 @@ public class CH_Beetle_Behavior : MonoBehaviour
     private Transform player;
 
     private float meleeAttackTimer;
+    private float attackTimer;
 
     private bool isDead = false;
+    private bool isAttacking = false;
 
     private void Awake()
     {
@@ -95,6 +99,13 @@ public class CH_Beetle_Behavior : MonoBehaviour
 
     private void Update()
     {
+        // Si esta muerto, no hace nada.
+        if (isDead)
+            return;
+
+        // Bajamos cooldowns y tiempos internos.
+        UpdateTimers();
+
         // Si esta recuperandose de knockback, no patrulla ni ataca.
         if (knockbackRecovery != null && knockbackRecovery.IsRecovering)
         {
@@ -102,17 +113,17 @@ public class CH_Beetle_Behavior : MonoBehaviour
             return;
         }
 
-        // Si esta muerto, no patrulla, no detecta, no carga y no ataca.
-        if (isDead)
-            return;
-
-        // Bajamos cooldowns de ataques.
-        UpdateTimers();
-
         // Mantenemos altura si usa este sistema.
         if (heightController != null)
         {
             heightController.KeepHeightFromGround();
+        }
+
+        // Si esta atacando, bloqueamos todo.
+        if (isAttacking)
+        {
+            HandleAttackState();
+            return;
         }
 
         // La deteccion la hace PlayerDetector.
@@ -125,10 +136,10 @@ public class CH_Beetle_Behavior : MonoBehaviour
             player = null;
         }
 
-        // Si PlayerDetector ha encontrado player, el Beetle combate.
+        // Si PlayerDetector ha encontrado player, McGregor combate.
         if (player != null)
         {
-            HandleBeetleCombat();
+            HandleMcGregorCombat();
             return;
         }
 
@@ -138,26 +149,33 @@ public class CH_Beetle_Behavior : MonoBehaviour
 
     private void UpdateTimers()
     {
-
-
         // Bajamos el cooldown del ataque melee.
         if (meleeAttackTimer > 0f)
         {
             meleeAttackTimer -= Time.deltaTime;
         }
+
+        // Bajamos el tiempo real que dura el ataque.
+        if (attackTimer > 0f)
+        {
+            attackTimer -= Time.deltaTime;
+        }
     }
 
-    private void HandleBeetleCombat()
+    private void HandleMcGregorCombat()
     {
         if (player == null)
             return;
+
+        // Si ha detectado al player, no patrullamos
+        DisablePatrol();
 
         // Siempre mira hacia el player.
         LookAtPlayer();
 
         float distanceToPlayer = Vector3.Distance(transform.position, player.position);
 
-        // Si esta a distancia cuerpo a cuerpo, deja de cargar y ataca normal.
+        // Si esta a distancia cuerpo a cuerpo, se para y ataca.
         if (distanceToPlayer <= meleeAttackRange)
         {
             StopMovement();
@@ -165,13 +183,48 @@ public class CH_Beetle_Behavior : MonoBehaviour
             return;
         }
 
-        // Si no esta a distancia cuerpo a cuerpo, carga hacia el player.
-        ChargeToPlayer();
+        // Si no esta a distancia cuerpo a cuerpo, va hacia el player.
+        MoveToPlayer();
+    }
+
+    private void HandleAttackState()
+    {
+        // Mientras ataca, la patrulla debe estar apagada.
+        DisablePatrol();
+
+        // Mientras ataca, no se mueve.
+        StopMovement();
+
+        // Mientras ataca, mantenemos el estado de ataque.
+        // Esto evita que se quede en animacion de andar/correr.
+        if (enemyAnimator != null)
+        {
+            enemyAnimator.SetAttacking();
+        }
+
+        // Puede seguir mirando al player durante el ataque.
+        if (player != null)
+        {
+            LookAtPlayer();
+        }
+
+        // Cuando termina el ataque, permitimos volver a moverse.
+        if (attackTimer <= 0f)
+        {
+            isAttacking = false;
+        }
     }
 
     private void HandlePatrol()
     {
-        // Paramos cualquier velocidad de carga anterior.
+        // Solo puede patrullar si NO esta atacando.
+        if (isAttacking)
+            return;
+
+        // Si no ve al player, reactivamos la patrulla.
+        EnablePatrol();
+
+        // Paramos cualquier velocidad anterior.
         StopMovement();
 
         if (enemyAnimator != null)
@@ -198,15 +251,22 @@ public class CH_Beetle_Behavior : MonoBehaviour
         }
     }
 
-    private void ChargeToPlayer()
+    private void MoveToPlayer()
     {
         if (player == null)
             return;
 
+        // Si esta atacando, no permitimos moverse.
+        if (isAttacking)
+            return;
+
+        // Mientras persigue al player, la patrulla sigue apagada.
+        DisablePatrol();
+
         // Calculamos direccion hacia el player.
         Vector3 direction = player.position - transform.position;
 
-        // Quitamos Y para que no cargue hacia arriba o hacia abajo.
+        // Quitamos Y para que no vaya hacia arriba o hacia abajo.
         direction.y = 0f;
 
         if (direction.sqrMagnitude <= 0.001f)
@@ -214,7 +274,7 @@ public class CH_Beetle_Behavior : MonoBehaviour
 
         direction.Normalize();
 
-        // Movemos al Beetle con Rigidbody.
+        // Movemos a McGregor con Rigidbody.
         if (rb != null)
         {
             rb.linearVelocity = new Vector3(
@@ -230,16 +290,31 @@ public class CH_Beetle_Behavior : MonoBehaviour
         }
     }
 
-
-
     private void TryMeleeAttack()
     {
-        // Si todavia esta en cooldown, no ataca.
+        // Si todavia esta en cooldown, NO ataca,
+        // pero tampoco se mueve porque esta en rango de ataque.
         if (meleeAttackTimer > 0f)
+        {
+            StopMovement();
+            DisablePatrol();
             return;
+        }
+
+        // Marcamos que esta atacando.
+        isAttacking = true;
+
+        // Durante este tiempo no se podra mover.
+        attackTimer = attackDuration;
 
         // Reiniciamos cooldown.
         meleeAttackTimer = meleeAttackCooldown;
+
+        // Apagamos patrulla antes de lanzar la animacion.
+        DisablePatrol();
+
+        // Paramos el movimiento justo al empezar el ataque.
+        StopMovement();
 
         if (enemyAnimator != null)
         {
@@ -261,7 +336,6 @@ public class CH_Beetle_Behavior : MonoBehaviour
             if (!col.CompareTag(playerTag))
                 continue;
 
-            // El ataque cuerpo a cuerpo hace 1 de daño.
             DamagePlayer(meleeDamage);
             return;
         }
@@ -316,21 +390,45 @@ public class CH_Beetle_Behavior : MonoBehaviour
             rb.linearVelocity.y,
             0f
         );
+
+        rb.angularVelocity = Vector3.zero;
+    }
+
+    private void DisablePatrol()
+    {
+        if (patrol == null)
+            return;
+
+        patrol.isPatrolling = false;
+
+        // Apagamos el componente para que no mueva al enemigo por su cuenta.
+        patrol.enabled = false;
+    }
+
+    private void EnablePatrol()
+    {
+        if (patrol == null)
+            return;
+
+        // Volvemos a activar la patrulla cuando ya no hay player.
+        patrol.enabled = true;
     }
 
     private void OnDeath()
     {
-        // Marcamos al Beetle como muerto.
+        // Marcamos a McGregor como muerto.
         isDead = true;
 
         // Olvidamos al player para que no siga atacando.
         player = null;
 
+        // Ya no esta atacando.
+        isAttacking = false;
+
+        // Apagamos patrulla.
+        DisablePatrol();
+
         // Paramos movimiento.
         StopMovement();
-
-
     }
-
-
 }
