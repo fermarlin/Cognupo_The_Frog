@@ -832,7 +832,7 @@ Transform:
   m_GameObject: {fileID: 279366612}
   serializedVersion: 2
   m_LocalRotation: {x: 0.24493322, y: -1.6082362e-16, z: 4.062859e-17, w: 0.96954}
-  m_LocalPosition: {x: 99.31, y: 16.41437, z: 87.23946}
+  m_LocalPosition: {x: 745.02, y: 43.05437, z: 177.84946}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -6773,6 +6773,10 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 1
   targetSwitchCooldown: 0.5
+  targetProxySmoothTime: 0.15
+  lostTargetSwitchCooldown: 0.1
+  markerExtraHeight: 0.3
+  markerDefaultHeight: 2
   playerMovement: {fileID: 2111669200}
 --- !u!114 &827990800
 MonoBehaviour:
@@ -6918,7 +6922,7 @@ Transform:
   m_GameObject: {fileID: 827990798}
   serializedVersion: 2
   m_LocalRotation: {x: 0.24493323, y: -1.6082364e-16, z: 4.06286e-17, w: 0.96953994}
-  m_LocalPosition: {x: 99.31, y: 16.41437, z: 87.23946}
+  m_LocalPosition: {x: 745.02, y: 43.05437, z: 177.84946}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -8723,7 +8727,7 @@ Transform:
   m_GameObject: {fileID: 1082002457}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: 0.36487684, z: -0, w: 0.93105584}
-  m_LocalPosition: {x: 99.31, y: 8, z: 98.68}
+  m_LocalPosition: {x: 745.02, y: 34.64, z: 189.29}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -16917,7 +16921,7 @@ Transform:
   m_GameObject: {fileID: 1851304587}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0.36487678, z: 0, w: 0.93105584}
-  m_LocalPosition: {x: 101.03575, y: 11.9, z: 99.80774}
+  m_LocalPosition: {x: 746.7458, y: 38.54, z: 190.41774}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -19692,15 +19696,15 @@ PrefabInstance:
       objectReference: {fileID: 827990799}
     - target: {fileID: 5470939482206149349, guid: ed08b5b93ca903f489176fdceeee7bd5, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 99.31
+      value: 745.02
       objectReference: {fileID: 0}
     - target: {fileID: 5470939482206149349, guid: ed08b5b93ca903f489176fdceeee7bd5, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 8
+      value: 34.64
       objectReference: {fileID: 0}
     - target: {fileID: 5470939482206149349, guid: ed08b5b93ca903f489176fdceeee7bd5, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 98.68
+      value: 189.29
       objectReference: {fileID: 0}
     - target: {fileID: 5470939482206149349, guid: ed08b5b93ca903f489176fdceeee7bd5, type: 3}
       propertyPath: m_LocalRotation.w
