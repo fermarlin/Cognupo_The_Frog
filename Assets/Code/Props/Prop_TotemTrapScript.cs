@@ -20,22 +20,30 @@ public class Prop_TotemTrapScript : MonoBehaviour
 
     private void Update()
     {
-        playerSpotted = PlayerInRange();
-
-        if (playerSpotted)
+        if (totemCube != null)
         {
-            if (!totemCube.activeSelf)
+            playerSpotted = PlayerInRange();
+
+            if (playerSpotted)
             {
-                ActivateCube();
+                if (!totemCube.activeSelf)
+                {
+                    ActivateCube();
+                }
+            }
+            else
+            {
+                if (totemCube.activeSelf)
+                {
+                    DeactivateCube();
+                }
             }
         }
         else
         {
-            if (totemCube.activeSelf)
-            {
-                DeactivateCube();
-            }
+            GetComponent<Prop_TotemTrapScript>().enabled = false;
         }
+        
     }
 
     private bool PlayerInRange()
@@ -43,7 +51,7 @@ public class Prop_TotemTrapScript : MonoBehaviour
         float playerDistance = (playerRef.transform.position - transform.position).sqrMagnitude;
         Debug.Log(playerDistance);
 
-        if ( playerDistance <= (Mathf.Pow(detectRadius, 2)))
+        if (playerDistance <= (Mathf.Pow(detectRadius, 2)))
         {
             return true;
         }
