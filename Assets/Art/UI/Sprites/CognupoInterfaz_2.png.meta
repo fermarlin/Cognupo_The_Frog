@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 9c63d7fa868e20846b0db1622e11ff04
+guid: 72de7cf23cd9ef64ba3866fe0d85af31
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -97,12 +97,12 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: CognupoInterfaz_0
+      name: CognupoInterfaz_2_0
       rect:
         serializedVersion: 2
         x: 14
         y: 774
-        width: 796
+        width: 273
         height: 266
       alignment: 0
       pivot: {x: 0, y: 0}
@@ -112,14 +112,36 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 09b1b4ed0ac9ab04cb8bd0f86ade6d14
-      internalID: 1122998970
+      spriteID: 7064b9426ec0c4445bb9b9cae9b4128c
+      internalID: -226778462
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: CognupoInterfaz_1
+      name: CognupoInterfaz_2_1
+      rect:
+        serializedVersion: 2
+        x: 307
+        y: 801
+        width: 618
+        height: 211
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 58aa0c77c394a754f8f618f0ff7d8a64
+      internalID: -347902559
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CognupoInterfaz_2_2
       rect:
         serializedVersion: 2
         x: 22
@@ -134,8 +156,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: f41ceb05774091741a853814abf01efd
-      internalID: 1745164603
+      spriteID: 5675b73a847b3ae49a829ec9d934512f
+      internalID: -2001928111
       vertices: []
       indices: 
       edges: []
@@ -144,7 +166,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 96c84e6fddf1f494bb36badd02c62849
+    spriteID: 53b703d6bd8a11645b419f8867462503
     internalID: 0
     vertices: []
     indices: 
@@ -154,8 +176,9 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      CognupoInterfaz_0: 1122998970
-      CognupoInterfaz_1: 1745164603
+      CognupoInterfaz_2_0: -226778462
+      CognupoInterfaz_2_1: -347902559
+      CognupoInterfaz_2_2: -2001928111
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
