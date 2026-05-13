@@ -1769,9 +1769,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0418d46d1b78a4dd0ad382d5a725f4d7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 10
+  maxHealth: 5
   destroyDelay: 20
   destroyOnDeath: 0
+  onDestroyPrefab: {fileID: 0}
+  onDestroyPrefabOffset: {x: 0, y: 1, z: 0}
   useKnockback: 1
   knockbackForce: 20
   knockbackUpForce: 20
