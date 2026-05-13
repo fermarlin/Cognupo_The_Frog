@@ -10,6 +10,7 @@ public class Prop_TotemCubeScript : MonoBehaviour
     [SerializeField] private GameObject vfxDisappear;
 
     [SerializeField] private float cubeSpeed;
+    [SerializeField] private float cubeDampQuotient = 2f;
     [SerializeField] private float cubeRotationSpeed;
 
     private void Start()
@@ -37,23 +38,12 @@ public class Prop_TotemCubeScript : MonoBehaviour
         var rotation = Quaternion.LookRotation(lookPos);
 
         var dampening = (playerRef.transform.position - transform.position).magnitude;
-        var cubeSpeedFinal = Mathf.Clamp((dampening / cubeSpeed)*50, 15, 100);
+        var cubeSpeedFinal = Mathf.Clamp((dampening / cubeSpeed)*50, 5, 50);
         Debug.Log(cubeSpeedFinal);
 
 
-        transform.rotation = Quaternion.Slerp(transform.rotation, rotation, Time.deltaTime * (dampening/2f));
+        transform.rotation = Quaternion.Slerp(transform.rotation, rotation, Time.deltaTime * (dampening/cubeDampQuotient));
 
         transform.position += transform.forward * Time.deltaTime * cubeSpeedFinal;
     }
-    /*
-    private void OnEnable()
-    {
-        Instantiate(vfxAppear, transform.position, Quaternion.identity);
-    }
-
-    private void OnDisable()
-    {
-        Instantiate(vfxDisappear, transform.position, Quaternion.identity);
-    }
-    */
 }
