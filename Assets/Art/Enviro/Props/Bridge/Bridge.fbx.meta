@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 48fd076b00544584fa0c22f7bfdfbc24
+guid: 16f026396caad6548a6c46357605326a
 ModelImporter:
   serializedVersion: 22200
   internalIDToNameTable: []
@@ -7,13 +7,8 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
-      name: Leaves
-    second: {fileID: 2100000, guid: 84677e3bb9c887745a238599f55989a9, type: 2}
-  - first:
-      type: UnityEngine:Material
-      assembly: UnityEngine.CoreModule
-      name: Trunk
-    second: {fileID: 2100000, guid: 6b4f1f242c8051f47ab23f2388e65c60, type: 2}
+      name: Prop_Bridge_Mat
+    second: {fileID: 2100000, guid: c910dae9005d0a14ca8e3041a3a1055b, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0
@@ -42,10 +37,7 @@ ModelImporter:
     clipAnimations: []
     isReadable: 0
   meshes:
-    lODScreenPercentages:
-    - 0.25
-    - 0.125
-    - 0.01
+    lODScreenPercentages: []
     globalScale: 1
     meshCompression: 0
     addColliders: 0
