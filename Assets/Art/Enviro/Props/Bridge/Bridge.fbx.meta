@@ -1,9 +1,14 @@
 fileFormatVersion: 2
-guid: 2fec482a736344342898677e5f339718
+guid: 16f026396caad6548a6c46357605326a
 ModelImporter:
   serializedVersion: 22200
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Prop_Bridge_Mat
+    second: {fileID: 2100000, guid: c910dae9005d0a14ca8e3041a3a1055b, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0
