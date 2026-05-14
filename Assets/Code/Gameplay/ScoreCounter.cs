@@ -3,17 +3,35 @@ using UnityEngine;
 
 public class ScoreCounter : MonoBehaviour
 {
-    [SerializeField] private TextMeshProUGUI scoreText;
+    public static ScoreCounter Instance { get; private set; }
 
+    [SerializeField] private TextMeshProUGUI scoreText;
     [SerializeField] private int score;
 
-    private void Update()
+    private void Awake()
     {
-        scoreText.text = score.ToString();
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
+        Instance = this;
     }
 
-    private void AddScore(int scoreToAdd)
+    private void Start()
+    {
+        UpdateScoreText();
+    }
+
+    public void AddScore(int scoreToAdd)
     {
         score += scoreToAdd;
+        UpdateScoreText();
+    }
+
+    private void UpdateScoreText()
+    {
+        scoreText.text = score.ToString();
     }
 }
