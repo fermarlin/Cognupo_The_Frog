@@ -487,6 +487,9 @@ MonoBehaviour:
   trapAnimator: {fileID: 4512250563693548925}
   activationTime: 4
   activeTime: 2
+  sfx_Ready: {fileID: 8300000, guid: 58ab880ca16719142b8851523c8f6984, type: 3}
+  sfx_Out: {fileID: 8300000, guid: 901973661f82d8d45bba76f5ceeabdf3, type: 3}
+  sfx_In: {fileID: 8300000, guid: 511ea46c144b6fb40b869e9bf7188bb0, type: 3}
 --- !u!1 &4812259977891992474
 GameObject:
   m_ObjectHideFlags: 0
