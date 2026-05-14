@@ -87,7 +87,16 @@ public class PlayerMovement : MonoBehaviour
     // INPUT / STATE
     // =========================
     private bool wasSwingingLastFrame = false; 
-    
+    // =========================
+    // SOUNDS
+    // =========================
+    [Header("Sounds")]
+    [SerializeField] private AudioSource audioSourcePJ;
+    [SerializeField] private AudioClip jumpClip;
+    [SerializeField] private AudioClip tongueClip;
+
+
+
 
     private float horizontalInput;             
     private float verticalInput;               
@@ -694,6 +703,8 @@ public class PlayerMovement : MonoBehaviour
         wasOnPlatformLastFrame = false;
 
         rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
+        if (audioSourcePJ != null && jumpClip != null)
+        audioSourcePJ.PlayOneShot(jumpClip);
         lastJumpTime = Time.time;
 
         OnJumpTriggered?.Invoke();
@@ -709,6 +720,9 @@ public class PlayerMovement : MonoBehaviour
         // Salto con direccion hacia camara y un poco hacia arriba
         Vector3 jumpDir = camTransform.forward + Vector3.up * 0.5f;
         rb.AddForce(jumpDir.normalized * jumpForce * 1.5f, ForceMode.Impulse);
+
+        if (audioSourcePJ != null && jumpClip != null)
+            audioSourcePJ.PlayOneShot(jumpClip);
     }
 
     private void HandleJumpPhysics()
@@ -836,6 +850,8 @@ public class PlayerMovement : MonoBehaviour
     public void TriggerAttack()
     {
         rotationLockUntilTime = Time.time + attackRotationLockTime;
+        if (audioSourcePJ != null && tongueClip != null)
+            audioSourcePJ.PlayOneShot(tongueClip);
         OnAttackTriggered?.Invoke();
     }
 
