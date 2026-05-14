@@ -307,7 +307,7 @@ MonoBehaviour:
   healthDiff: -2
   objectiveTag: Player
   destroyOnTrigger: 0
-  soundEffect: {fileID: 8300000, guid: b643d06695630c84788b82669a46b8a7, type: 3}
+  soundEffect: {fileID: 8300000, guid: 19ec7b44863c66f449e1096317243eab, type: 3}
 --- !u!65 &2968251151077146851
 BoxCollider:
   m_ObjectHideFlags: 0

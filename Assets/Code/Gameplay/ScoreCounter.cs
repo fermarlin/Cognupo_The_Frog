@@ -32,6 +32,13 @@ public class ScoreCounter : MonoBehaviour
 
     private void UpdateScoreText()
     {
-        scoreText.text = score.ToString();
+        if (score > 9)
+        {
+            scoreText.text = score.ToString();
+        }
+        else
+        {
+            scoreText.text = "0" + score.ToString();
+        }
     }
 }
