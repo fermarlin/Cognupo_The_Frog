@@ -117,6 +117,7 @@ public class PlayerRespawn : MonoBehaviour
 
         if (playerMovement != null)
             playerMovement.enabled = true;
+            playerMovement.ResetInput();
 
         isRespawning = false;
     }
