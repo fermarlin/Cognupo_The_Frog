@@ -1781,8 +1781,8 @@ MonoBehaviour:
   onDestroyPrefab: {fileID: 104006, guid: a801d5bc64b7dc44e964c45bd6709a7e, type: 3}
   onDestroyPrefabOffset: {x: 0, y: 1, z: 0}
   useKnockback: 1
-  knockbackForce: 20
-  knockbackUpForce: 20
+  knockbackForce: 10
+  knockbackUpForce: 10
   currentHealth: 0
 --- !u!82 &2845467351127993985
 AudioSource:

@@ -35,6 +35,14 @@ public static class MovementBooster
 
 
         Push(targetRb, finalKnockbackDirection, 1f, ForceMode.VelocityChange);
+        
+        PlayerMovement playerMovement = targetRb.GetComponent<PlayerMovement>();
+
+
+        if (playerMovement != null)
+        {
+            playerMovement.RegisterExternalBounce();
+        }
     }
 
     public static void BounceUp(Rigidbody targetRb, float bounceForce)
