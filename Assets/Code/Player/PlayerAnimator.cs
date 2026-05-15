@@ -30,6 +30,7 @@ public class PlayerAnimator : MonoBehaviour
         {
             health.OnDamaged += OnDamaged;
             health.OnDeath += OnDeath;
+            health.OnRespawn += OnRespawn;
         }
     }
 
@@ -53,6 +54,7 @@ public class PlayerAnimator : MonoBehaviour
             playerMovement.OnAttackTriggered -= OnAttackTriggered;
             health.OnDamaged -= OnDamaged;
             health.OnDeath -= OnDeath;
+            health.OnRespawn -= OnRespawn;
     
         }
     }
@@ -65,8 +67,7 @@ public class PlayerAnimator : MonoBehaviour
 
     private void Update()
     {
-        // Aunque el estado principal venga del PlayerMovement,
-        // actualizo cada frame speed para que la animacion sea fluida
+
         RefreshAnimator();
         
     }
@@ -88,8 +89,7 @@ public class PlayerAnimator : MonoBehaviour
         Transform currentTarget = targetLockHandler.GetCurrentTarget();
         if (currentTarget == null) return;
 
-        // Igual que en PlayerAttack:
-        // usamos una rotacion global directa del hueso para que mire al objetivo
+        // Igual que en PlayerAttack usamos una rotacion global directa del hueso para que mire al objetivo
         Vector3 dir = headBone.position - currentTarget.position;
 
         // Evitamos errores si esta practicamente en el mismo punto
@@ -163,7 +163,15 @@ public class PlayerAnimator : MonoBehaviour
         if (anim == null)
             return;
 
-        anim.SetTrigger(deathTrigger);
+        anim.SetBool(deathTrigger,true);
+    }
+
+    private void OnRespawn()
+    {
+        if (anim == null)
+            return;
+
+        anim.SetBool(deathTrigger,false);
     }
 
     private void ApplyStateBools(PlayerMovement.MovementState currentState)
