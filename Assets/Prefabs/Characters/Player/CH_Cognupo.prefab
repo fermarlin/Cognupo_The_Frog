@@ -1593,6 +1593,7 @@ GameObject:
   - component: {fileID: 4497370283250373223}
   - component: {fileID: 2446181255921108940}
   - component: {fileID: 2845467351127993985}
+  - component: {fileID: 6006216468519088907}
   m_Layer: 7
   m_Name: CH_Cognupo
   m_TagString: Player
@@ -1776,6 +1777,7 @@ MonoBehaviour:
   maxHealth: 5
   destroyDelay: 0.5
   destroyOnDeath: 1
+  respawn: 1
   onDestroyPrefab: {fileID: 104006, guid: a801d5bc64b7dc44e964c45bd6709a7e, type: 3}
   onDestroyPrefabOffset: {x: 0, y: 1, z: 0}
   useKnockback: 1
@@ -1795,7 +1797,7 @@ AudioSource:
   m_audioClip: {fileID: 0}
   m_Resource: {fileID: 0}
   m_PlayOnAwake: 1
-  m_Volume: 1
+  m_Volume: 0.5
   m_Pitch: 1
   Loop: 0
   Mute: 0
@@ -1879,6 +1881,21 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &6006216468519088907
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5506301814464846933}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55e9b505bc7477a4bb3de1e564a0ab43, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  startCheckpoint: {fileID: 0}
+  respawnDelay: 2
+  extraHeight: 0.1
 --- !u!1 &5543689840465995675
 GameObject:
   m_ObjectHideFlags: 0

@@ -4,6 +4,6 @@ public class MainMenuScript : MonoBehaviour
 {
     public void StartGame()
     {
-        SceneLoaderScript.LoadScene(0);
+        SceneLoaderScript.LoadScene(1);
     }
 }
