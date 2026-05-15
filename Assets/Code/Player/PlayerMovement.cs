@@ -229,6 +229,10 @@ public class PlayerMovement : MonoBehaviour
     // =========================
     // INPUT
     // =========================
+    public void ResetInput()
+    {
+        moveInput = Vector3.zero;
+    }
     private void MyInput()
     {
         // Movement viene del Input System
@@ -298,7 +302,7 @@ public class PlayerMovement : MonoBehaviour
         else if (grounded) state = MovementState.running;
         else state = MovementState.air;
 
-        // Evento solo si hay cambio real
+        // Evento solo si hay cambio
         if (previous != state)
         {
             OnMovementStateChanged?.Invoke(previous, state);
