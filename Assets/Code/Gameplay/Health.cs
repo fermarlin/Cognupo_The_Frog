@@ -7,21 +7,16 @@ public class Health : MonoBehaviour
 
     [Header("Health Parameters")]
     [SerializeField] private int maxHealth = 2; // Vida maxima
-
     [SerializeField] private float destroyDelay = 0f;
-
     [SerializeField] private bool destroyOnDeath = true; // Si queremos que se destruya al morir
-
+    [SerializeField] private bool respawn = false; // Si queremos que se respawnee
     [Header("Death Prefab")]
     [SerializeField] private GameObject onDestroyPrefab; // Prefab que aparece justo antes de destruirse
-
     [SerializeField] private Vector3 onDestroyPrefabOffset = Vector3.up; // Offset para que aparezca un poco encima
 
     [Header("Knockback")]
     [SerializeField] private bool useKnockback = false; // Si queremos que reciba knockback al recibir daño
-
     [SerializeField] private float knockbackForce = 8f; // Fuerza horizontal del knockback
-
     [SerializeField] private float knockbackUpForce = 3f; // Fuerza hacia arriba del knockback
 
     public float currentHealth; // Vida actual
@@ -35,6 +30,7 @@ public class Health : MonoBehaviour
     public event System.Action OnDeath; // Aviso cuando este objeto muere
 
     public event System.Action<float> OnDamaged; // Aviso cuando este objeto recibe daño
+    public event System.Action OnRespawn; // Aviso cuando este objeto respawnea
 
     private void Awake()
     {
@@ -105,6 +101,14 @@ public class Health : MonoBehaviour
         }
     }
 
+    public void RespawnFullHealth()
+    {
+        isDead = false;
+        currentHealth = maxHealth;
+        OnRespawn?.Invoke();
+        OnHealthChanged?.Invoke(currentHealth, maxHealth);
+    }
+
     private IEnumerator DestroyAfterDelay()
     {
         // Esperamos el tiempo que hayas puesto en el inspector
@@ -116,7 +120,7 @@ public class Health : MonoBehaviour
             Instantiate(onDestroyPrefab, transform.position + onDestroyPrefabOffset, transform.rotation);
         }
 
-        //Destruimos este objeto
+        if(!respawn)        //Destruimos este objeto si no respawnea
         Destroy(gameObject);
     }
 }
