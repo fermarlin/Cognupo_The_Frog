@@ -9,7 +9,6 @@ public class PlayerRespawn : MonoBehaviour
     [SerializeField] private float extraHeight = 0.2f;
 
     private Vector3 currentCheckpointPosition;
-    private Quaternion currentCheckpointRotation;
 
     private Health health;
     private Rigidbody rb;
@@ -26,12 +25,10 @@ public class PlayerRespawn : MonoBehaviour
         if (startCheckpoint != null)
         {
             currentCheckpointPosition = startCheckpoint.position;
-            currentCheckpointRotation = startCheckpoint.rotation;
         }
         else
         {
             currentCheckpointPosition = transform.position;
-            currentCheckpointRotation = transform.rotation;
         }
     }
 
@@ -54,7 +51,6 @@ public class PlayerRespawn : MonoBehaviour
     public void SetCheckpoint(Vector3 position, Quaternion rotation)
     {
         currentCheckpointPosition = position;
-        currentCheckpointRotation = rotation;
     }
 
     private void Respawn()
@@ -85,12 +81,12 @@ public class PlayerRespawn : MonoBehaviour
         if (rb != null)
         {
             rb.position = respawnPosition;
-            rb.rotation = currentCheckpointRotation;
+            
         }
         else
         {
             transform.position = respawnPosition;
-            transform.rotation = currentCheckpointRotation;
+            
         }
 
         Physics.SyncTransforms();
