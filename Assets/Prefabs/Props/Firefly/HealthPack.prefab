@@ -158,6 +158,7 @@ MonoBehaviour:
   objectiveTag: Player
   destroyOnTrigger: 1
   soundEffect: {fileID: 8300000, guid: 5052682f23f19384da5d743dc76ed64b, type: 3}
+  collectSpawnPrefab: {fileID: 147642, guid: 685c97d007af49549b239b56b6d2000a, type: 3}
 --- !u!1001 &5058429192265339561
 PrefabInstance:
   m_ObjectHideFlags: 0

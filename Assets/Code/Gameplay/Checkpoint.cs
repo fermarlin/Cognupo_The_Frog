@@ -5,6 +5,8 @@ public class Checkpoint : MonoBehaviour
     [Header("Checkpoint")]
     [SerializeField] private Transform respawnPoint;
     [SerializeField] private bool useCheckpointRotation = true;
+    [Header("Spawn On Collect")]
+    [SerializeField] private GameObject collectSpawnPrefab;
 
     private void Awake()
     {
@@ -25,6 +27,12 @@ public class Checkpoint : MonoBehaviour
             : other.transform.rotation;
 
         playerRespawn.SetCheckpoint(respawnPoint.position, rotationToSave);
+        Vector3 particlespawn = new Vector3(transform.position.x,other.transform.position.y,transform.position.z);
+        Instantiate(
+            collectSpawnPrefab,
+            particlespawn,
+            Quaternion.identity
+        );
 
     }
 }
