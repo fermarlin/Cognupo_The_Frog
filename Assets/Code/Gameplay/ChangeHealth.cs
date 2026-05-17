@@ -7,7 +7,8 @@ public class ChangeHealth : MonoBehaviour
     [SerializeField] private string objectiveTag = "Player";  // Tag del objeto al que quiero afectar
     [SerializeField] private bool destroyOnTrigger = true;    // Si es true, este objeto se destruye al activarse
     [SerializeField] private AudioClip soundEffect;           // Sonido que se reproduce al activarse
-
+    [Header("Spawn On Collect")]
+    [SerializeField] private GameObject collectSpawnPrefab;
     private void OnTriggerEnter(Collider other)
     {
         // Si el objeto que entra no tiene el tag salgo
@@ -36,5 +37,14 @@ public class ChangeHealth : MonoBehaviour
         {
             Destroy(gameObject);
         }
+
+        if (collectSpawnPrefab!=null){
+            Instantiate(
+                collectSpawnPrefab,
+                transform.position,
+                Quaternion.identity
+            );
+        }
+
     }
 }

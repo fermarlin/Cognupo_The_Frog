@@ -48,6 +48,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   respawnPoint: {fileID: 1585718237030800413}
   useCheckpointRotation: 1
+  collectSpawnPrefab: {fileID: 931352995334258111, guid: 7894e9ff3a821ea42a692a6a0cda4e5c, type: 3}
 --- !u!65 &1033211432646796593
 BoxCollider:
   m_ObjectHideFlags: 0
