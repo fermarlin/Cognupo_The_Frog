@@ -15,6 +15,7 @@ GameObject:
   - component: {fileID: 873193683136494061}
   - component: {fileID: 7453577770207428264}
   - component: {fileID: 4593000903899575223}
+  - component: {fileID: 3980923201672852792}
   - component: {fileID: 2703555541320637462}
   m_Layer: 5
   m_Name: --HUD--
@@ -161,7 +162,22 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   playerHealth: {fileID: 0}
   playerLifeFill: {fileID: 8467012687789312800}
-  lerpSpeed: 5
+  lerpSpeed: 10
+--- !u!114 &3980923201672852792
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 189822502160299003}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 637025fe9f703004cb043da9b4c373b7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  playerHealth: {fileID: 0}
+  playerLifeFill: {fileID: 3449657067132303911}
+  lerpSpeed: 3
 --- !u!82 &2703555541320637462
 AudioSource:
   m_ObjectHideFlags: 0
@@ -317,7 +333,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 0, b: 0, a: 1}
+  m_Color: {r: 1, g: 0.2971698, b: 0.2971698, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -325,13 +341,13 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_Sprite: {fileID: -2001928111, guid: 72de7cf23cd9ef64ba3866fe0d85af31, type: 3}
-  m_Type: 0
+  m_Type: 3
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
   m_FillAmount: 1
-  m_FillClockwise: 1
-  m_FillOrigin: 0
+  m_FillClockwise: 0
+  m_FillOrigin: 2
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
 --- !u!1 &2597742478370214238

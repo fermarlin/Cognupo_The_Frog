@@ -22,15 +22,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 16f026396caad6548a6c46357605326a, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 426.05298
+      value: -18.290009
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 16f026396caad6548a6c46357605326a, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 32.27384
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 16f026396caad6548a6c46357605326a, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 188.38782
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 16f026396caad6548a6c46357605326a, type: 3}
       propertyPath: m_LocalRotation.w
@@ -42,11 +42,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 16f026396caad6548a6c46357605326a, type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 16f026396caad6548a6c46357605326a, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 16f026396caad6548a6c46357605326a, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -67,6 +67,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 16f026396caad6548a6c46357605326a, type: 3}
       propertyPath: m_Name
       value: Bridge
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 16f026396caad6548a6c46357605326a, type: 3}
+      propertyPath: m_Layer
+      value: 3
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -100,5 +104,5 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 9.627167, y: 4.428111, z: 0.534668}
-  m_Center: {x: 0.08244324, y: 0.023231506, z: -0.80100477}
+  m_Size: {x: 9.123596, y: 4.428111, z: 0.53466797}
+  m_Center: {x: 0.38589478, y: 0.023231506, z: -0.80100477}
