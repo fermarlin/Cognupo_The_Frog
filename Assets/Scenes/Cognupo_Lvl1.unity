@@ -57163,7 +57163,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 55e9b505bc7477a4bb3de1e564a0ab43, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  startCheckpoint: {fileID: 940735550}
+  startCheckpoint: {fileID: 1501558233}
   respawnDelay: 2
   extraHeight: 0.1
 --- !u!114 &955256698
