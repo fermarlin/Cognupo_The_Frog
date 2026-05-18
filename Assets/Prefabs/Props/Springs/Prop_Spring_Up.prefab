@@ -92,6 +92,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   propAnimator: {fileID: 4121908257945554487}
   pushForce: 15
+  touchSound: {fileID: 8300000, guid: 0411d11b2f9d38e40b626253e100c4a9, type: 3}
+  minPitch: 0.9
+  maxPitch: 1.2
+  volume: 20
 --- !u!1001 &5806902809429171146
 PrefabInstance:
   m_ObjectHideFlags: 0

@@ -26,10 +26,6 @@ public class Prop_TotemCubeScript : MonoBehaviour
         {
             MoveToPlayer();
         }
-        else
-        {
-            Debug.Log("PLAYER IS NULL");
-        }
     }
 
     private void MoveToPlayer()
@@ -39,7 +35,6 @@ public class Prop_TotemCubeScript : MonoBehaviour
 
         var dampening = (playerRef.transform.position - transform.position).magnitude;
         var cubeSpeedFinal = Mathf.Clamp((dampening / cubeSpeed)*50, 5, 50);
-        Debug.Log(cubeSpeedFinal);
 
 
         transform.rotation = Quaternion.Slerp(transform.rotation, rotation, Time.deltaTime * (dampening/cubeDampQuotient));
