@@ -602,6 +602,7 @@ MonoBehaviour:
   objectiveTag: Player
   destroyOnTrigger: 0
   soundEffect: {fileID: 8300000, guid: 19ec7b44863c66f449e1096317243eab, type: 3}
+  collectSpawnPrefab: {fileID: 0}
 --- !u!65 &5326851632129034029
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -669,7 +670,7 @@ Animator:
   m_Enabled: 1
   m_Avatar: {fileID: 0}
   m_Controller: {fileID: 9100000, guid: 5365671453e7084419d3ac713e022396, type: 2}
-  m_CullingMode: 0
+  m_CullingMode: 2
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
   m_LinearVelocityBlending: 0
