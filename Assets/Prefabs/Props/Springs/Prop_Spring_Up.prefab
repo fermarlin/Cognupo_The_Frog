@@ -46,7 +46,7 @@ Animator:
   m_Enabled: 1
   m_Avatar: {fileID: 0}
   m_Controller: {fileID: 9100000, guid: 93bbbf4da2aebfe47b8a7cd739af26a4, type: 2}
-  m_CullingMode: 0
+  m_CullingMode: 2
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
   m_LinearVelocityBlending: 0
@@ -103,6 +103,10 @@ PrefabInstance:
     - target: {fileID: 56119190466029547, guid: 9165394064205cf48b7190a2eed29cb9, type: 3}
       propertyPath: m_Name
       value: URP_Mushroom_02
+      objectReference: {fileID: 0}
+    - target: {fileID: 1800232688269742903, guid: 9165394064205cf48b7190a2eed29cb9, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3935083687642240504, guid: 9165394064205cf48b7190a2eed29cb9, type: 3}
       propertyPath: m_LocalPosition.x

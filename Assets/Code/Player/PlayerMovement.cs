@@ -31,6 +31,8 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private Transform playerMesh;         // El mesh que giramo
     [SerializeField] private float rotationSpeed = 10f;    // Suavidad de giro
     [SerializeField] private float attackRotationLockTime = .2f; // Tiempo que bloqueamos la rotacion al atacar
+    [SerializeField] private ParticleSystem dustParticle; // Tiempo que bloqueamos la rotacion al atacar
+
     private float rotationLockUntilTime = 0f;                   // Hasta cuando no puede rotar
     
     [Header("Ground Visual Rotation")]
@@ -175,6 +177,20 @@ public class PlayerMovement : MonoBehaviour
         SpeedControl();    // Limita velocidad horizontal
         StateHandler();    // Calcula running/air/swinging y lanza evento si cambia
         HandleRotation();  // Gira mesh segun se mueva el pj
+
+        if (dustParticle != null)
+        {
+            if (grounded)
+            {
+                if (!dustParticle.isPlaying)
+                    dustParticle.Play();
+            }
+            else
+            {
+                if (dustParticle.isPlaying)
+                    dustParticle.Stop();
+            }
+        }
 
         // Detectar si acabo de entrar en swing
         bool isSwingingNow = IsSwinging();

@@ -511,6 +511,7 @@ MonoBehaviour:
   maxHealth: 6
   destroyDelay: 1.5
   destroyOnDeath: 1
+  respawn: 0
   onDestroyPrefab: {fileID: 140434, guid: dd38b45e2135c854d87201aa3d863978, type: 3}
   onDestroyPrefabOffset: {x: 0, y: 1, z: 0}
   useKnockback: 1
@@ -894,7 +895,7 @@ Animator:
   m_Enabled: 1
   m_Avatar: {fileID: 9000000, guid: a9a09e151f4b0824eab074376860ee70, type: 3}
   m_Controller: {fileID: 9100000, guid: 6309126ad49100844b129bc0ce3d1c47, type: 2}
-  m_CullingMode: 0
+  m_CullingMode: 2
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
   m_LinearVelocityBlending: 0

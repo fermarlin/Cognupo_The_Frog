@@ -49,7 +49,6 @@ public class Prop_TotemTrapScript : MonoBehaviour
     private bool PlayerInRange()
     {
         float playerDistance = (playerRef.transform.position - transform.position).sqrMagnitude;
-        Debug.Log(playerDistance);
 
         if (playerDistance <= (Mathf.Pow(detectRadius, 2)))
         {
